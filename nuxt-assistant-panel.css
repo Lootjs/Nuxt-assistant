@@ -1,0 +1,111 @@
+:root {
+    --primary-color: #00dc82;
+    --secondary-color: #818fa4;
+}
+
+
+* {
+    font-size: 16px;
+}
+
+html {
+    background-color: #020420;
+    padding: 0 20px;
+}
+
+.heading {
+    font-size: 24px;
+    margin-bottom: 10px;
+    color: var(--primary-color);
+    font-weight: 500;
+}
+
+.silent {
+    color: var(--secondary-color);
+}
+
+.full-width {
+    width: 100%;
+}
+
+#debug-content {
+    display: flex;
+    gap: 25px;
+}
+
+.panel-title {
+    color: var(--primary-color);
+    font-size: 28px;
+}
+
+.tabcontent {
+    display: none;
+    padding: 0 20px;
+    color: #fff;
+    border-left: 1px solid var(--secondary-color);
+    flex-basis: 85%;
+    flex-direction: column;
+}
+
+.tabs {
+    display: flex;
+    flex-direction: column;
+    flex-basis: 8%;
+}
+
+.tablinks {
+    background-color: #020420;
+    color: var(--secondary-color);
+    padding: 10px 0;
+    border: 0;
+    cursor: pointer;
+    font-weight: 600;
+    text-align: left;
+}
+
+.tablinks.active {
+    color: var(--primary-color);
+}
+
+.tablinks:hover {
+    color: var(--primary-color);
+}
+
+.routeItem {
+    cursor: pointer;
+    border: 1px solid #1e293b;
+    border-radius: 5px;
+    color: #fff;
+    padding: 10px 0 0;
+    margin-bottom: 10px;
+}
+
+.routeItem summary {
+    padding: 0 15px 10px;
+}
+
+.routeItem summary:hover {
+    color: var(--primary-color);
+}
+
+.routeItem > div {
+    background-color: #1e293b;
+    color: #676E95;
+    margin: 5px 0 0;
+    padding: 10px;
+}
+
+.routeItem > div > ul {
+    margin: 0;
+}
+
+.row {
+    margin-bottom: 5px;
+}
+
+/* configs */
+
+#configList > ul {
+    padding: 0 20px;
+    margin: 0;
+}
