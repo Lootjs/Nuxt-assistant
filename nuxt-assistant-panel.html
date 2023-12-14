@@ -13,7 +13,7 @@
         <button class="tablinks" data-id="routes">Routes</button>
         <button class="tablinks" data-id="ssrData">SSR Data</button>
         <button class="tablinks" data-id="configs">Configs</button>
-        <button class="tablinks" data-id="i18n">I18n</button>
+        <button class="tablinks" data-id="i18n">i18n</button>
     </div>
 
     <div id="common" class="tabcontent">
@@ -45,18 +45,32 @@
     </div>
 
     <div id="configs" class="tabcontent">
-        <div class="heading">Configuration</div>
+        <div class="heading">Configurations</div>
         <div id="configList"></div>
     </div>
 
     <div id="ssrData" class="tabcontent">
-        <div class="heading">API Requests</div>
+        <div class="heading">SSR Data</div>
         <div id="ssrRequestsList"></div>
     </div>
 
     <div id="i18n" class="tabcontent">
-        <div class="heading">I18N</div>
-        Coming soon..
+        <div class="heading">i18n</div>
+        <div>
+            <div class="row">
+                [ * ] <span class="silent">Current locale:</span> <span id="currentLocale"></span>
+            </div>
+            <div class="row">
+                [ * ] <span class="silent">Default locale:</span> <span id="defaultLocale"></span>
+            </div>
+            <div class="row">
+                [ * ] <span class="silent">Browser locale:</span> <span id="getBrowserLocale"></span>
+            </div>
+        </div>
+        <div class="heading heading--offset">Loaded locales</div>
+        <div id="i18nLocalesList"></div>
+        <div class="heading heading--offset">Messages</div>
+        <div id="i18nMessagesList"></div>
     </div>
 </div>
 <script src="nuxt-assistant-panel.js"></script>

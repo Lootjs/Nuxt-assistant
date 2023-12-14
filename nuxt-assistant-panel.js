@@ -1,16 +1,28 @@
 const extractPayloadAndVersions = `
-  JSON.stringify({
-    versions: window.useNuxtApp().versions,
-    payload: window.useNuxtApp().payload
-  })
+    JSON.stringify({
+        versions: window.useNuxtApp().versions,
+        payload: window.useNuxtApp().payload
+    })
 `
 
 const extractRoutes = `window.useNuxtApp().$router.getRoutes()`
+const extractI18n = `
+    JSON.stringify({
+        defaultLocale: window.useNuxtApp().$i18n.defaultLocale,
+        activeLocale: window.useNuxtApp().$i18n.locale.value,
+        locales: window.useNuxtApp().$i18n.locales.value,
+        messages: window.useNuxtApp().$i18n.messages.value,
+        getBrowserLocale: window.useNuxtApp().$i18n.getBrowserLocale()
+    })
+`
 
 function runAssistant() {
     const routesList = document.getElementById("routesList");
     const configList = document.getElementById("configList");
     const requestsList = document.getElementById("ssrRequestsList");
+    const i18nLocalesList = document.getElementById("i18nLocalesList");
+    const i18nMessagesList = document.getElementById("i18nMessagesList");
+    clearOldData();
 
     chrome.devtools.inspectedWindow.eval(extractPayloadAndVersions, (result, isException) => {
         if (!isException) {
@@ -27,7 +39,7 @@ function runAssistant() {
                 formattedDate = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString();
             }
 
-            console.log("Data from useNuxtApp():", flags);
+            // console.log("Data from useNuxtApp():", flags);
             document.getElementById('nuxt-version').textContent = versions.nuxt;
             document.getElementById('vue-version').textContent = versions.vue;
             document.getElementById('currentRoute').textContent = flags.path;
@@ -35,7 +47,7 @@ function runAssistant() {
 
 
             for (let key in flags.data) {
-                renderRequestItem(key, flags.data[key])
+                renderRequestItem(key, flags.data[key], flags._errors[key])
             }
 
             createList(flags.config, configList);
@@ -47,7 +59,7 @@ function runAssistant() {
 
     chrome.devtools.inspectedWindow.eval(extractRoutes, (result, isException) => {
         if (!isException) {
-            console.log("Data from useNuxtApp() routes:", result);
+            // console.log("Data from useNuxtApp() routes:", result);
             result.forEach(renderRouteItem)
         } else {
             console.error("Error accessing useNuxtApp()");
@@ -55,6 +67,37 @@ function runAssistant() {
         }
     });
 
+    chrome.devtools.inspectedWindow.eval(extractI18n, (result, isException) => {
+        if (!isException) {
+            const {
+                activeLocale,
+                defaultLocale,
+                locales,
+                messages,
+                getBrowserLocale,
+            } = JSON.parse(result);
+
+            document.getElementById('currentLocale').textContent = activeLocale;
+            document.getElementById('defaultLocale').textContent = defaultLocale;
+            document.getElementById('getBrowserLocale').textContent = getBrowserLocale;
+
+            locales.forEach(locale => {
+               createList(locale, i18nLocalesList)
+            });
+            i18nMessagesList.textContent = flattenI18n(messages)
+        } else {
+            console.error("Error accessing useNuxtApp()");
+            nuxtNotFound();
+        }
+    });
+
+    function clearOldData() {
+        routesList.innerText = '';
+        configList.innerText = '';
+        requestsList.innerText = '';
+        i18nLocalesList.innerText = '';
+        i18nMessagesList.innerText = '';
+    }
 
     function openTab(evt, tabName) {
         let i, tabcontent, tablinks;
@@ -108,9 +151,13 @@ function runAssistant() {
 
     // Requests tab
 
-    function renderRequestItem(hash, response) {
+    function renderRequestItem(hash, response, error) {
         const requestItem = document.createElement("details");
         requestItem.className = "routeItem";
+
+        if (error !== null) {
+            requestItem.className += ' routeItem--hasError'
+        }
 
         const summary = document.createElement("summary");
         summary.textContent = hash;
@@ -123,6 +170,8 @@ function runAssistant() {
             } else {
                 data = JSON.stringify(response)
             }
+        } else if (error !== null) {
+            data = `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`
         }
 
         const dataElement = document.createElement("div");;
@@ -159,6 +208,25 @@ function runAssistant() {
         }
 
         parentElement.appendChild(ul);
+    }
+
+    // i18n tab
+    function flattenI18n(data) {
+        let output = [];
+        for (const locale in data) {
+            function recurse(obj, current) {
+                for (const key in obj) {
+                    let newKey = current ? `${current}.${key}` : key;
+                    if (obj[key] && typeof obj[key] === 'object' && !obj[key].end) {
+                        recurse(obj[key], newKey);
+                    } else if (obj[key].end) {
+                        output.push(`${locale}.${newKey} = "${obj[key].body.static}"`);
+                    }
+                }
+            }
+            recurse(data[locale], '');
+        }
+        return output.join('\n');
     }
 }
 

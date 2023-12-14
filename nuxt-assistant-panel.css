@@ -80,6 +80,10 @@ html {
     margin-bottom: 10px;
 }
 
+.routeItem--hasError {
+    border-color: #bb1616;
+}
+
 .routeItem summary {
     padding: 0 15px 10px;
 }
@@ -90,7 +94,7 @@ html {
 
 .routeItem > div {
     background-color: #1e293b;
-    color: #676E95;
+    color: #aeb1c3;
     margin: 5px 0 0;
     padding: 10px;
 }
@@ -101,6 +105,10 @@ html {
 
 .row {
     margin-bottom: 5px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 18px;
 }
 
 /* configs */
@@ -109,3 +117,19 @@ html {
     padding: 0 20px;
     margin: 0;
 }
+
+/* i18n */
+#i18nMessagesList {
+    white-space: break-spaces;
+    max-height: 200px;
+    overflow: auto;
+    border: 1px solid;
+    padding: 10px;
+    border-radius: 5px;
+    margin-top: 10px;
+}
+
+#i18n .heading--offset {
+    margin: 25px 0 0;
+}
+
