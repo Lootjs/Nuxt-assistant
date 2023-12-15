@@ -111,6 +111,12 @@ html {
     font-size: 18px;
 }
 
+.section-end::before {
+    font-size: 24px;
+    color: var(--primary-color);
+    content: "}";
+}
+
 /* configs */
 
 #configList > ul {
@@ -120,16 +126,54 @@ html {
 
 /* i18n */
 #i18nMessagesList {
-    white-space: break-spaces;
-    max-height: 200px;
-    overflow: auto;
-    border: 1px solid;
-    padding: 10px;
-    border-radius: 5px;
-    margin-top: 10px;
+    margin: 10px 0 0 15px;
+    line-height: 24px;
 }
+
+div#i18nMessagesList:empty::after {
+    content: "Messages are empty";
+}
+
+#i18n ul {
+    margin: 0;
+}
+
 
 #i18n .heading--offset {
     margin: 25px 0 0;
 }
 
+.i18nItem span {
+    cursor: pointer;
+}
+.i18nItem span::before {
+    content: '"';
+}
+
+.i18nItem__key {
+    color: var(--primary-color);
+}
+
+.i18nItem__key::after {
+    content: '": ';
+}
+
+.i18nItem__value {
+    color: #aeb1c3;
+}
+
+.i18nItem__value::after {
+    content: '"';
+}
+
+.i18nItem span:hover {
+    color: #f7b063;
+}
+
+input#i18nMessagesInput {
+    margin: 10px 0 5px 15px;
+    border: 0;
+    padding: 10px;
+    border-radius: 5px;
+    width: 300px;
+}

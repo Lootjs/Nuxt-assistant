@@ -22,7 +22,11 @@ function runAssistant() {
     const requestsList = document.getElementById("ssrRequestsList");
     const i18nLocalesList = document.getElementById("i18nLocalesList");
     const i18nMessagesList = document.getElementById("i18nMessagesList");
+    const i18nCommon = document.getElementById("i18nCommon");
+    let fetchedMessages = [];
+
     clearOldData();
+    openTab({ target: document.getElementById('common') }, 'common')
 
     chrome.devtools.inspectedWindow.eval(extractPayloadAndVersions, (result, isException) => {
         if (!isException) {
@@ -77,14 +81,17 @@ function runAssistant() {
                 getBrowserLocale,
             } = JSON.parse(result);
 
-            document.getElementById('currentLocale').textContent = activeLocale;
-            document.getElementById('defaultLocale').textContent = defaultLocale;
-            document.getElementById('getBrowserLocale').textContent = getBrowserLocale;
+            createList({
+                "Current Locale": activeLocale,
+                "Default Locale": defaultLocale,
+                "Browser's Locale": getBrowserLocale,
+            }, document.getElementById('i18nCommon'))
 
             locales.forEach(locale => {
                createList(locale, i18nLocalesList)
             });
-            i18nMessagesList.textContent = flattenI18n(messages)
+            fetchedMessages = flattenI18n(messages);
+            renderI18nList(fetchedMessages, i18nMessagesList)
         } else {
             console.error("Error accessing useNuxtApp()");
             nuxtNotFound();
@@ -97,6 +104,7 @@ function runAssistant() {
         requestsList.innerText = '';
         i18nLocalesList.innerText = '';
         i18nMessagesList.innerText = '';
+        i18nCommon.innerText = '';
     }
 
     function openTab(evt, tabName) {
@@ -115,8 +123,6 @@ function runAssistant() {
         document.getElementById(tabName).style.display = "flex";
         evt.target.className += " active";
     }
-
-    document.getElementById("common").style.display = "flex";
 
     document.getElementById('tablinkNavigator').addEventListener('click', (event) => {
         if (event.target.classList.contains("tablinks")) {
@@ -210,6 +216,29 @@ function runAssistant() {
         parentElement.appendChild(ul);
     }
 
+    function renderI18nList(data, parentElement) {
+        parentElement.innerText = '';
+        const wrapper = document.createElement("div");
+
+        data.forEach(({ key, value }) => {
+            const div = document.createElement("div");
+            div.setAttribute('class', 'i18nItem');
+            const keyWrapper = document.createElement("span");
+            keyWrapper.textContent = key;
+            keyWrapper.setAttribute('class', 'i18nItem__key');
+            const valueWrapper = document.createElement("span");
+            valueWrapper.setAttribute('class', 'i18nItem__value');
+            valueWrapper.textContent = value;
+
+            div.appendChild(keyWrapper);
+            div.appendChild(valueWrapper);
+
+            wrapper.appendChild(div);
+        });
+
+        parentElement.appendChild(wrapper);
+    }
+
     // i18n tab
     function flattenI18n(data) {
         let output = [];
@@ -217,17 +246,34 @@ function runAssistant() {
             function recurse(obj, current) {
                 for (const key in obj) {
                     let newKey = current ? `${current}.${key}` : key;
-                    if (obj[key] && typeof obj[key] === 'object' && !obj[key].end) {
+                    if (obj[key] && typeof obj[key] === 'object' && (!obj[key].hasOwnProperty('t') && !obj[key].end)) {
                         recurse(obj[key], newKey);
-                    } else if (obj[key].end) {
-                        output.push(`${locale}.${newKey} = "${obj[key].body.static}"`);
+                    } else if (obj[key].hasOwnProperty('t') || obj[key].hasOwnProperty('end')) {
+                        const body = obj[key].body ? 'body' : 'b'
+                        const staticKey = obj[key][body].static ? 'static' : 's'
+                        output.push({
+                            key: `${locale}.${newKey}`,
+                            value: obj[key][body][staticKey] || ''
+                        });
                     }
                 }
             }
             recurse(data[locale], '');
         }
-        return output.join('\n');
+        return output;
     }
+
+    document.getElementById('i18nMessagesInput').addEventListener('input', e => {
+        let messages = fetchedMessages;
+
+        if (e.target.value.length > 0) {
+            messages = messages.filter(({ key, value }) => {
+                return key.indexOf(e.target.value) !== -1 || value.indexOf(e.target.value) !== -1
+            })
+        }
+
+        renderI18nList(messages, i18nMessagesList)
+    })
 }
 
 runAssistant()

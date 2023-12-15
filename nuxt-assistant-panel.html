@@ -55,22 +55,20 @@
     </div>
 
     <div id="i18n" class="tabcontent">
-        <div class="heading">i18n</div>
-        <div>
-            <div class="row">
-                [ * ] <span class="silent">Current locale:</span> <span id="currentLocale"></span>
-            </div>
-            <div class="row">
-                [ * ] <span class="silent">Default locale:</span> <span id="defaultLocale"></span>
-            </div>
-            <div class="row">
-                [ * ] <span class="silent">Browser locale:</span> <span id="getBrowserLocale"></span>
-            </div>
-        </div>
-        <div class="heading heading--offset">Loaded locales</div>
+        <div class="heading">i18n: {</div>
+        <div id="i18nCommon"></div>
+        <div class="section-end"></div>
+
+        <div class="heading heading--offset">Loaded locales: {</div>
         <div id="i18nLocalesList"></div>
-        <div class="heading heading--offset">Messages</div>
+        <div class="section-end"></div>
+
+        <div class="heading heading--offset">Messages: {</div>
+        <div>
+            <input type="search" id="i18nMessagesInput" placeholder="Find a specific keys"/>
+        </div>
         <div id="i18nMessagesList"></div>
+        <div class="section-end"></div>
     </div>
 </div>
 <script src="nuxt-assistant-panel.js"></script>
