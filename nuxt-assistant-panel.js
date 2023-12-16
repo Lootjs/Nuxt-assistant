@@ -7,13 +7,13 @@ const extractPayloadAndVersions = `
 
 const extractRoutes = `window.useNuxtApp().$router.getRoutes()`
 const extractI18n = `
-    JSON.stringify({
+    (window.useNuxtApp()).hasOwnProperty('$i18n') ? JSON.stringify({
         defaultLocale: window.useNuxtApp().$i18n.defaultLocale,
         activeLocale: window.useNuxtApp().$i18n.locale.value,
         locales: window.useNuxtApp().$i18n.locales.value,
         messages: window.useNuxtApp().$i18n.messages.value,
         getBrowserLocale: window.useNuxtApp().$i18n.getBrowserLocale()
-    })
+    }) : 
 `
 
 function runAssistant() {
@@ -94,7 +94,7 @@ function runAssistant() {
             renderI18nList(fetchedMessages, i18nMessagesList)
         } else {
             console.error("Error accessing useNuxtApp()");
-            nuxtNotFound();
+            // nuxtNotFound();
         }
     });
 
@@ -178,6 +178,8 @@ function runAssistant() {
             }
         } else if (error !== null) {
             data = `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`
+        } else {
+            data = JSON.stringify(response)
         }
 
         const dataElement = document.createElement("div");;

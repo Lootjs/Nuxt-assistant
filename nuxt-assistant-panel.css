@@ -11,6 +11,7 @@
 html {
     background-color: #020420;
     padding: 0 20px;
+    overflow-x: hidden;
 }
 
 .heading {
