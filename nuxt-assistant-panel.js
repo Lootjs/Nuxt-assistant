@@ -13,7 +13,7 @@ const extractI18n = `
         locales: window.useNuxtApp().$i18n.locales.value,
         messages: window.useNuxtApp().$i18n.messages.value,
         getBrowserLocale: window.useNuxtApp().$i18n.getBrowserLocale()
-    }) : 
+    }) : null
 `
 
 function runAssistant() {
@@ -72,7 +72,7 @@ function runAssistant() {
     });
 
     chrome.devtools.inspectedWindow.eval(extractI18n, (result, isException) => {
-        if (!isException) {
+        if (!isException && result) {
             const {
                 activeLocale,
                 defaultLocale,
