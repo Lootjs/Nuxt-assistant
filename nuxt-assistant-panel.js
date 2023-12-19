@@ -87,9 +87,7 @@ function runAssistant() {
                 "Browser's Locale": getBrowserLocale,
             }, document.getElementById('i18nCommon'))
 
-            locales.forEach(locale => {
-               createList(locale, i18nLocalesList)
-            });
+            createList(locales, i18nLocalesList)
             fetchedMessages = flattenI18n(messages);
             renderI18nList(fetchedMessages, i18nMessagesList)
         } else {
