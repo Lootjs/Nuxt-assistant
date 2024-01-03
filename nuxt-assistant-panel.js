@@ -1,7 +1,19 @@
 const extractPayloadAndVersions = `
     JSON.stringify({
         versions: window.useNuxtApp().versions,
-        payload: window.useNuxtApp().payload
+        payload: window.useNuxtApp().payload,
+        i18nIncluded: (window.useNuxtApp()).hasOwnProperty('$i18n'),
+    })
+`
+
+const extractCurrentRoute = `
+    JSON.stringify({
+        fullPath: window.useNuxtApp().$router.currentRoute.value.fullPath,
+        name: window.useNuxtApp().$router.currentRoute.value.name,
+        params: window.useNuxtApp().$router.currentRoute.value.params,
+        path: window.useNuxtApp().$router.currentRoute.value.path,
+        query: window.useNuxtApp().$router.currentRoute.value.query,
+        redirectedFrom: window.useNuxtApp().$router.currentRoute.value.redirectedFrom,
     })
 `
 
@@ -15,59 +27,77 @@ const extractI18n = `
         getBrowserLocale: window.useNuxtApp().$i18n.getBrowserLocale()
     }) : null
 `
-
+chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
+    if (message.type === 'page-navigation') {
+        runAssistant();
+    }
+});
 function runAssistant() {
-    const routesList = document.getElementById("routesList");
-    const configList = document.getElementById("configList");
-    const requestsList = document.getElementById("ssrRequestsList");
-    const i18nLocalesList = document.getElementById("i18nLocalesList");
-    const i18nMessagesList = document.getElementById("i18nMessagesList");
-    const i18nCommon = document.getElementById("i18nCommon");
+    document.querySelector(".nuxt-not-found").textContent = 'Fetching..';
+    const i18nMessagesList = document.getElementById("i18nMessagesList")
+    document.querySelectorAll('#i18n-included img, #server-rendered img')
+        .forEach(el => el.style.display = 'none')
+    document.getElementById('refetch-trigger').onclick = runAssistant;
     let fetchedMessages = [];
-
-    clearOldData();
-    openTab({ target: document.getElementById('common') }, 'common')
 
     chrome.devtools.inspectedWindow.eval(extractPayloadAndVersions, (result, isException) => {
         if (!isException) {
-            document.querySelector(".panel-title").textContent = 'Nuxt Assistant';
-            document.querySelector(".panel-title").onclick = () => {};
-            document.querySelector("#debug-content").style.display = 'flex';
-            
-            const {versions, payload} = JSON.parse(result);
+            document.querySelector(".nuxt-not-found").style.display = 'none';
+            // document.querySelector(".panel-title").textContent = 'Nuxt Assistant';
+            // document.querySelector(".panel-title").onclick = () => {};
+            // document.querySelector("#debug-content").style.display = 'flex';
+
+            const {versions, payload, i18nIncluded} = JSON.parse(result);
             const flags = {...payload};
-            let formattedDate = 'N/A';
+            let formattedDate = null;
 
             if (flags.prerenderedAt) {
                 const date = new Date(flags.prerenderedAt);
                 formattedDate = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString();
+                document.getElementById('prerenderedAt').textContent = `Prerendered at: ${formattedDate}`;
             }
+
+            document.getElementById(`ssr-${flags.serverRendered ? 'true' : 'false'}`).style.display = 'block';
+            document.getElementById(`i18n-${i18nIncluded ? 'true' : 'false'}`).style.display = 'block';
 
             // console.log("Data from useNuxtApp():", flags);
             document.getElementById('nuxt-version').textContent = versions.nuxt;
             document.getElementById('vue-version').textContent = versions.vue;
-            document.getElementById('currentRoute').textContent = flags.path;
-            document.getElementById('prerenderedAt').textContent = formattedDate;
-
 
             for (let key in flags.data) {
                 renderRequestItem(key, flags.data[key], flags._errors[key])
             }
 
+            const configList = document.getElementById("configList");
+            configList.innerText = '';
             createList(flags.config, configList);
         } else {
-            console.error("Error accessing useNuxtApp()");
+            console.warn("Error accessing useNuxtApp()");
             nuxtNotFound();
         }
     });
 
     chrome.devtools.inspectedWindow.eval(extractRoutes, (result, isException) => {
         if (!isException) {
-            // console.log("Data from useNuxtApp() routes:", result);
-            result.forEach(renderRouteItem)
+            const routesList = document.getElementById("routesList");
+            routesList.innerText = '';
+            result.forEach(el => renderRouteItem(el, routesList))
         } else {
-            console.error("Error accessing useNuxtApp()");
-            nuxtNotFound();
+            console.warn("Error accessing useNuxtApp()");
+            // nuxtNotFound();
+        }
+    });
+
+    chrome.devtools.inspectedWindow.eval(extractCurrentRoute, (result, isException) => {
+        if (!isException) {
+            const currentRoute = JSON.parse(result);
+            const parentEl = document.getElementById('currentRoute');
+            parentEl.innerText = '';
+            // console.log("Data from useNuxtApp() current route:", currentRoute);
+            createList(currentRoute, parentEl)
+        } else {
+            console.warn("Error accessing useNuxtApp()");
+            // nuxtNotFound();
         }
     });
 
@@ -81,29 +111,21 @@ function runAssistant() {
                 getBrowserLocale,
             } = JSON.parse(result);
 
-            createList({
-                "Current Locale": activeLocale,
-                "Default Locale": defaultLocale,
-                "Browser's Locale": getBrowserLocale,
-            }, document.getElementById('i18nCommon'))
+            document.getElementById('currentLocale').textContent = activeLocale
+            document.getElementById('defaultLocale').textContent = defaultLocale
+            document.getElementById('browserLocale').textContent = getBrowserLocale
+            const i18nLocalesList = document.getElementById("i18nLocalesList");
 
+            i18nLocalesList.innerText = '';
             createList(locales, i18nLocalesList)
             fetchedMessages = flattenI18n(messages);
             renderI18nList(fetchedMessages, i18nMessagesList)
         } else {
-            console.error("Error accessing useNuxtApp()");
+            document.querySelector('[data-id=i18n]').style.display = 'none';
+            console.warn("Error accessing useNuxtApp()");
             // nuxtNotFound();
         }
     });
-
-    function clearOldData() {
-        routesList.innerText = '';
-        configList.innerText = '';
-        requestsList.innerText = '';
-        i18nLocalesList.innerText = '';
-        i18nMessagesList.innerText = '';
-        i18nCommon.innerText = '';
-    }
 
     function openTab(evt, tabName) {
         let i, tabcontent, tablinks;
@@ -131,12 +153,12 @@ function runAssistant() {
     })
 
     function nuxtNotFound() {
-        document.querySelector(".panel-title").textContent = 'Nuxt is not found! Click here to re-fetch data';
-        document.querySelector(".panel-title").onclick = runAssistant;
-        document.querySelector("#debug-content").style.display = 'none';
+        document.querySelector(".nuxt-not-found").textContent = 'Nuxt is not found! Click here to re-fetch data';
+        document.querySelector(".nuxt-not-found").onclick = runAssistant;
+        document.querySelector(".nuxt-not-found").style.display = 'block';
     }
 
-    function renderRouteItem(route) {
+    function renderRouteItem(route, parentEl) {
         const routeItem = document.createElement("details");
         routeItem.className = "routeItem";
 
@@ -150,12 +172,14 @@ function runAssistant() {
         routeItem.appendChild(summary);
         routeItem.appendChild(dataElement);
 
-        routesList.appendChild(routeItem);
+        parentEl.appendChild(routeItem);
     }
 
     // Requests tab
 
     function renderRequestItem(hash, response, error) {
+        const requestsList = document.getElementById("ssrRequestsList");
+        requestsList.innerText = '';
         const requestItem = document.createElement("details");
         requestItem.className = "routeItem";
 
@@ -163,25 +187,39 @@ function runAssistant() {
             requestItem.className += ' routeItem--hasError'
         }
 
+        const getType = (value) => {
+            if (Array.isArray(value)) {
+                return 'array'
+            }
+
+            return typeof value;
+        }
+        let labels = `[response type is ${getType(response)}`;
+        if (response.hasOwnProperty('length') && response.length > 1) {
+            labels += ` and contains ${response.length} items`
+        }
+        labels += ']';
         const summary = document.createElement("summary");
-        summary.textContent = hash;
+        const prefixElement = document.createElement('span');
+        prefixElement.className = "routeItem__labels";
+        prefixElement.textContent = 'Request: ';
+        summary.appendChild(prefixElement);
+        summary.appendChild(document.createTextNode(hash));
+        const labelsElement = document.createElement('span');
+        labelsElement.className = "routeItem__labels";
+        labelsElement.textContent = labels;
+        summary.appendChild(labelsElement);
         summary.setAttribute("title", hash);
         let data = '';
 
-        if (Array.isArray(response)) {
-            if (response.length > 3) {
-                data = `First item:\n${JSON.stringify(response[0])}\n\nResponse contains ${response.length} elements.`
-            } else {
-                data = JSON.stringify(response)
-            }
-        } else if (error !== null) {
+        if (error !== null) {
             data = `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`
         } else {
-            data = JSON.stringify(response)
+            data = JSON.stringify(response, null, 2)
         }
 
-        const dataElement = document.createElement("div");;
-        dataElement.innerHTML = data.replace(/\n/g, "<br>")
+        const dataElement = document.createElement("div");
+        dataElement.innerHTML = data;
 
         requestItem.appendChild(summary);
         requestItem.appendChild(dataElement);
@@ -202,7 +240,7 @@ function runAssistant() {
 
             li.appendChild(span);
 
-            if (typeof data[key] === "object" && Object.keys(data[key]).length > 0) {
+            if (typeof data[key] === "object" && data[key] !== null && Object.keys(data[key]).length > 0) {
                 createList(data[key], li);
             } else {
                 const span = document.createElement("span");
@@ -277,7 +315,3 @@ function runAssistant() {
 }
 
 runAssistant()
-
-chrome.devtools.network.onNavigated.addListener(url => {
-    setTimeout(runAssistant, 800)
-});

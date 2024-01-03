@@ -6,69 +6,165 @@
     <link rel="stylesheet" href="nuxt-assistant-panel.css">
 </head>
 <body>
-<h1 class="panel-title">Nuxt Assistant</h1>
+<div class="nuxt-not-found">
+    Nuxt is not found! Click here to re-fetch data
+</div>
 <div id="debug-content">
-    <div class="tabs" id="tablinkNavigator">
-        <button class="tablinks active" data-id="common">Common</button>
-        <button class="tablinks" data-id="routes">Routes</button>
-        <button class="tablinks" data-id="ssrData">SSR Data</button>
-        <button class="tablinks" data-id="configs">Configs</button>
-        <button class="tablinks" data-id="i18n">i18n</button>
-    </div>
-
-    <div id="common" class="tabcontent">
-        <div class="heading">Common information</div>
-        <div class="row">
-            <svg viewBox="79.624 78.292 26.097 16.223" width="26.097" height="16.223" xmlns="http://www.w3.org/2000/svg">
-                <path d="M 94.238 94.515 L 103.894 94.515 C 104.202 94.515 104.497 94.414 104.764 94.271 C 105.031 94.129 105.306 93.95 105.46 93.703 C 105.614 93.457 105.721 93.177 105.721 92.892 C 105.721 92.607 105.614 92.328 105.46 92.081 L 98.936 81.618 C 98.782 81.371 98.594 81.192 98.327 81.05 C 98.06 80.907 97.678 80.807 97.37 80.807 C 97.062 80.807 96.767 80.907 96.5 81.05 C 96.233 81.192 96.045 81.371 95.891 81.618 L 94.238 84.294 L 90.933 79.103 C 90.779 78.856 90.591 78.597 90.324 78.454 C 90.057 78.312 89.762 78.292 89.454 78.292 C 89.146 78.292 88.851 78.312 88.584 78.454 C 88.317 78.597 88.042 78.856 87.888 79.103 L 79.798 92.081 C 79.644 92.328 79.624 92.607 79.624 92.892 C 79.624 93.177 79.644 93.457 79.798 93.703 C 79.952 93.95 80.227 94.129 80.494 94.271 C 80.761 94.414 81.056 94.515 81.364 94.515 L 87.453 94.515 C 89.866 94.515 91.622 93.505 92.847 91.595 L 95.804 86.809 L 97.37 84.294 L 102.155 91.919 L 95.804 91.919 L 94.238 94.515 Z M 87.366 91.919 L 83.104 91.919 L 89.454 81.699 L 92.673 86.809 L 90.541 90.274 C 89.727 91.514 88.8 91.919 87.366 91.919 Z" fill="#00DC82" style="" transform="matrix(1, 0, 0, 1, 3.552713678800501e-15, 3.552713678800501e-15)"/>
-            </svg>
-            <span class="silent">Nuxt version:</span> <span id="nuxt-version"></span>
+    <div class="layout">
+        <div class="sidebar">
+            <div class="header">
+                <img src="./images/icon-nuxt.svg" alt="" width="36"/>
+                <div class="header__title">Assistant</div>
+            </div>
+            <div class="tabs" id="tablinkNavigator">
+                <div class="tablinks active" data-id="common">
+                    <img src="./images/icon-overview.svg" alt=""/>
+                    Overview
+                </div>
+                <div class="tablinks" data-id="routes">
+                    <img src="./images/icon-router.svg" alt=""/>
+                    Routes
+                </div>
+                <div class="tablinks" data-id="ssrData">
+                    <img src="./images/icon-ssr.svg" alt=""/>
+                    SSR Data
+                </div>
+                <div class="tablinks" data-id="configs">
+                    <img src="./images/icon-config.svg" alt=""/>
+                    Configs
+                </div>
+                <div class="tablinks" data-id="i18n">
+                    <img src="./images/icon-i18n.svg" alt=""/>
+                    i18n
+                </div>
+            </div>
+            <button class="refetch-trigger" id="refetch-trigger">
+                Restart Nuxt Assistant
+            </button>
         </div>
-        <div class="row">
-            <svg viewBox="127.223 113.103 17.498 13.997" width="26.098" height="13.997" xmlns="http://www.w3.org/2000/svg">
-                <path fill="#42b883" d="M 137.995 113.103 L 135.972 116.335 L 133.949 113.103 L 127.223 113.103 L 135.972 127.1 L 144.721 113.103 C 144.721 113.103 137.995 113.103 137.995 113.103 Z" data-v-28205da4="" style="" transform="matrix(1, 0, 0, 1, 3.552713678800501e-15, 3.552713678800501e-15)"/>
-                <path fill="#35495e" d="M 137.995 113.103 L 135.972 116.335 L 133.949 113.103 L 130.723 113.103 L 135.972 121.501 L 141.222 113.103 L 137.995 113.103 Z" data-v-28205da4="" style="" transform="matrix(1, 0, 0, 1, 3.552713678800501e-15, 3.552713678800501e-15)"/>
-            </svg>
-            <span class="silent">Vue version:</span> <span id="vue-version"></span>
+
+        <div class="main">
+
+            <div id="common" class="tabcontent" style="display: flex">
+                <div class="heading">Overview</div>
+
+                <div class="widgets">
+                    <div class="widget">
+                        <div class="widget__highlight" id="nuxt-version"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-nuxt.svg" alt="nuxt logo"/>
+                            </div>
+                            <div class="widget__name">Version</div>
+                        </div>
+                    </div>
+
+                    <div class="widget">
+                        <div class="widget__highlight" id="vue-version"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-vue.svg" alt="vue logo"/>
+                            </div>
+                            <div class="widget__name">Version</div>
+                        </div>
+                    </div>
+
+                    <div class="widget widget--covered">
+                        <div class="widget__highlight" id="server-rendered">
+                            <img src="./images/icon-check.svg" id="ssr-true"/>
+                            <img src="./images/icon-denied.svg" id="ssr-false"/>
+                        </div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-ssr.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">SSR</div>
+                        </div>
+                    </div>
+
+                    <div class="widget widget--covered">
+                        <div class="widget__highlight" id="i18n-included">
+                            <img src="./images/icon-check.svg" id="i18n-true"/>
+                            <img src="./images/icon-denied.svg" id="i18n-false"/>
+                        </div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-i18n.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">I18n</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="routes" class="tabcontent">
+                <div class="heading">Current route</div>
+                <div id="currentRoute" class="full-width"></div>
+
+                <div class="divider divider--margined"></div>
+
+                <div class="heading">Route list</div>
+                <div id="routesList" class="full-width"></div>
+            </div>
+
+            <div id="configs" class="tabcontent">
+                <div class="heading">Configurations</div>
+                <div id="configList"></div>
+            </div>
+
+            <div id="ssrData" class="tabcontent">
+                <div class="heading">SSR Data</div>
+                <div id="prerenderedAt"></div>
+                <div class="divider divider--margined"></div>
+                <div id="ssrRequestsList"></div>
+            </div>
+
+            <div id="i18n" class="tabcontent">
+                <div class="heading">i18n: {</div>
+
+                <div class="widgets">
+                    <div class="widget widget--covered">
+                        <div class="widget__highlight" id="currentLocale"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-i18n.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">Current Locale</div>
+                        </div>
+                    </div>
+                    <div class="widget widget--covered">
+                        <div class="widget__highlight" id="defaultLocale"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-i18n.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">Default Locale</div>
+                        </div>
+                    </div>
+                    <div class="widget widget--covered">
+                        <div class="widget__highlight" id="browserLocale"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-i18n.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">Browser's Locale</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="section-end"></div>
+
+                <div class="heading heading--offset">Loaded locales: {</div>
+                <div id="i18nLocalesList"></div>
+                <div class="section-end"></div>
+
+                <div class="heading heading--offset">Messages: {</div>
+                <div>
+                    <input type="search" id="i18nMessagesInput" placeholder="Find a specific keys"/>
+                </div>
+                <div id="i18nMessagesList"></div>
+                <div class="section-end"></div>
+            </div>
         </div>
-        <div class="row">
-            [ * ] <span class="silent">Current route:</span> <span id="currentRoute"></span>
-        </div>
-        <div class="row">
-            [ * ] <span class="silent">Prerendered at:</span> <span id="prerenderedAt"></span>
-        </div>
-    </div>
-
-    <div id="routes" class="tabcontent">
-        <div class="heading">Route list</div>
-        <div id="routesList" class="full-width"></div>
-    </div>
-
-    <div id="configs" class="tabcontent">
-        <div class="heading">Configurations</div>
-        <div id="configList"></div>
-    </div>
-
-    <div id="ssrData" class="tabcontent">
-        <div class="heading">SSR Data</div>
-        <div id="ssrRequestsList"></div>
-    </div>
-
-    <div id="i18n" class="tabcontent">
-        <div class="heading">i18n: {</div>
-        <div id="i18nCommon"></div>
-        <div class="section-end"></div>
-
-        <div class="heading heading--offset">Loaded locales: {</div>
-        <div id="i18nLocalesList"></div>
-        <div class="section-end"></div>
-
-        <div class="heading heading--offset">Messages: {</div>
-        <div>
-            <input type="search" id="i18nMessagesInput" placeholder="Find a specific keys"/>
-        </div>
-        <div id="i18nMessagesList"></div>
-        <div class="section-end"></div>
     </div>
 </div>
 <script src="nuxt-assistant-panel.js"></script>

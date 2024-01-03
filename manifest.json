@@ -1,10 +1,11 @@
 {
   "manifest_version": 3,
   "name": "Nuxt Assistant",
-  "version": "1.6",
+  "version": "1.7",
   "description": "Nuxt Assistant for cozy debugging Nuxt sites",
   "devtools_page": "nuxt-assistant.html",
   "icons": {
     "128": "images/icon128.png"
-  }
+  },
+  "permissions": ["tabs"]
 }

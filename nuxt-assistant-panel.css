@@ -1,8 +1,8 @@
 :root {
     --primary-color: #00dc82;
     --secondary-color: #818fa4;
+    --accent-color: #cbd5e1;
 }
-
 
 * {
     font-size: 16px;
@@ -10,15 +10,49 @@
 
 html {
     background-color: #020420;
-    padding: 0 20px;
+    padding: 0;
     overflow-x: hidden;
+}
+
+body {
+    margin: 0;
+}
+
+.layout {
+    display: flex;
+}
+
+.sidebar {
+    min-width: 9%;
+    min-height: 100vh;
+    border-right: 2px solid var(--secondary-color);
+}
+
+.header {
+    display: flex;
+    color: #fff;
+    gap: 8px;
+    align-items: center;
+    padding: 0 0 10px 15px;
+    margin-top: 10px;
+    border-bottom: 1px solid var(--secondary-color);
+    user-select: none;
+}
+
+.header__title {
+    font-size: 24px;
+    font-weight: 500;
 }
 
 .heading {
     font-size: 24px;
     margin-bottom: 10px;
-    color: var(--primary-color);
+    color: #fff;
     font-weight: 500;
+}
+
+.main {
+    flex: 1;
 }
 
 .silent {
@@ -29,23 +63,13 @@ html {
     width: 100%;
 }
 
-#debug-content {
-    display: flex;
-    gap: 25px;
-}
-
-.panel-title {
-    color: var(--primary-color);
-    font-size: 28px;
-}
-
 .tabcontent {
     display: none;
     padding: 0 20px;
     color: #fff;
-    border-left: 1px solid var(--secondary-color);
     flex-basis: 85%;
     flex-direction: column;
+    margin-top: 10px;
 }
 
 .tabs {
@@ -57,11 +81,26 @@ html {
 .tablinks {
     background-color: #020420;
     color: var(--secondary-color);
-    padding: 10px 0;
+    padding: 10px 15px;
     border: 0;
     cursor: pointer;
     font-weight: 600;
     text-align: left;
+    border-bottom: 1px solid var(--secondary-color);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: color 0.3s ease;
+}
+
+.tablinks img {
+    width: 24px;
+    height: 24px;
+    filter: invert(61%) sepia(7%) saturate(905%) hue-rotate(177deg) brightness(91%) contrast(91%);
+}
+
+.tablinks:hover img, .tablinks.active img {
+    filter: invert(75%) sepia(47%) saturate(3985%) hue-rotate(105deg) brightness(94%) contrast(102%);
 }
 
 .tablinks.active {
@@ -70,6 +109,82 @@ html {
 
 .tablinks:hover {
     color: var(--primary-color);
+}
+
+.divider {
+    height: 1px;
+    background-color: var(--secondary-color);
+}
+
+.divider--margined {
+    margin: 16px 0;
+}
+
+/* overview tab */
+
+.widgets {
+    margin-top: 10px;
+    display: flex;
+    gap: 10px;
+}
+
+.widget {
+    flex: 1;
+    cursor: pointer;
+    max-width: 200px;
+    border: 2px solid var(--secondary-color);
+    border-radius: 10px;
+    padding: 22px 10px;
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    align-items: center;
+    transition: border 0.3s ease;
+}
+
+.widget:hover {
+    border-color: var(--primary-color);
+}
+
+.widget--covered img {
+    filter: invert(75%) sepia(47%) saturate(3985%) hue-rotate(105deg) brightness(94%) contrast(102%);
+}
+
+.widget__highlight {
+    font-size: 28px;
+    font-weight: 500;
+}
+
+.widget__highlight img {
+    width: 36px;
+    height: 36px;
+    display: none;
+}
+
+.widget__meta {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    color: var(--accent-color);
+}
+
+.widget__cover, .widget__meta {
+    display: flex;
+    align-items: center;
+}
+
+.widget__name {
+    font-weight: 500;
+}
+
+.widget__cover img {
+    width: 20px;
+}
+
+/* Routes tab */
+
+.tabcontent#routes ul {
+    margin: 0;
 }
 
 .routeItem {
@@ -85,8 +200,14 @@ html {
     border-color: #bb1616;
 }
 
+.routeItem .routeItem__labels {
+    color: var(--secondary-color);
+}
+
 .routeItem summary {
     padding: 0 15px 10px;
+    gap: 6px;
+    display: flex;
 }
 
 .routeItem summary:hover {
@@ -98,10 +219,15 @@ html {
     color: #aeb1c3;
     margin: 5px 0 0;
     padding: 10px;
+    white-space: pre;
 }
 
 .routeItem > div > ul {
     margin: 0;
+}
+
+.tabcontent#ssrData {
+    margin-top: 10px;
 }
 
 .row {
@@ -114,7 +240,7 @@ html {
 
 .section-end::before {
     font-size: 24px;
-    color: var(--primary-color);
+    color: #fff;
     content: "}";
 }
 
@@ -177,4 +303,42 @@ input#i18nMessagesInput {
     padding: 10px;
     border-radius: 5px;
     width: 300px;
+}
+
+/* nuxt-not-found state */
+.nuxt-not-found {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    text-align: center;
+    z-index: 1;
+    display: none;
+    color: #fff;
+    background-color: #1e293b;
+    font-size: 2rem;
+    padding-top: 30px;
+    cursor: pointer;
+}
+
+.nuxt-not-found:hover {
+    text-decoration: underline;
+    color: var(--accent-color);
+}
+
+
+.refetch-trigger {
+    display: flex;
+    border: 0;
+    border-radius: 5px;
+    color: #000;
+    background: var(--primary-color);
+    padding: 10px 12px;
+    cursor: pointer;
+    margin: 20px auto;
+}
+
+.refetch-trigger:hover {
+    background: #16c37e;
 }
