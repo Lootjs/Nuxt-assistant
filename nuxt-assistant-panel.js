@@ -22,16 +22,21 @@ const extractI18n = `
     (window.useNuxtApp()).hasOwnProperty('$i18n') ? JSON.stringify({
         defaultLocale: window.useNuxtApp().$i18n.defaultLocale,
         activeLocale: window.useNuxtApp().$i18n.locale.value,
-        locales: window.useNuxtApp().$i18n.locales.value,
+        locales: window.useNuxtApp().$i18n.localeCodes.value,
+        localesProps: window.useNuxtApp().$i18n.localeProperties.value,
         messages: window.useNuxtApp().$i18n.messages.value,
         getBrowserLocale: window.useNuxtApp().$i18n.getBrowserLocale()
     }) : null
 `
+
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (message.type === 'page-navigation') {
         runAssistant();
     }
 });
+
+let activePath = '';
+
 function runAssistant() {
     document.querySelector(".nuxt-not-found").textContent = 'Fetching..';
     const i18nMessagesList = document.getElementById("i18nMessagesList")
@@ -70,31 +75,30 @@ function runAssistant() {
 
             const configList = document.getElementById("configList");
             configList.innerText = '';
-            createList(flags.config, configList);
+            renderConfigCards(flags.config, configList);
         } else {
             console.warn("Error accessing useNuxtApp()");
             nuxtNotFound();
         }
     });
 
-    chrome.devtools.inspectedWindow.eval(extractRoutes, (result, isException) => {
+    chrome.devtools.inspectedWindow.eval(extractCurrentRoute, (result, isException) => {
         if (!isException) {
-            const routesList = document.getElementById("routesList");
-            routesList.innerText = '';
-            result.forEach(el => renderRouteItem(el, routesList))
+            const currentRoute = JSON.parse(result);
+            activePath = currentRoute.name;
+
         } else {
             console.warn("Error accessing useNuxtApp()");
             // nuxtNotFound();
         }
     });
 
-    chrome.devtools.inspectedWindow.eval(extractCurrentRoute, (result, isException) => {
+    chrome.devtools.inspectedWindow.eval(extractRoutes, (result, isException) => {
         if (!isException) {
-            const currentRoute = JSON.parse(result);
-            const parentEl = document.getElementById('currentRoute');
-            parentEl.innerText = '';
-            // console.log("Data from useNuxtApp() current route:", currentRoute);
-            createList(currentRoute, parentEl)
+            const routesList = document.getElementById("routesList");
+            document.getElementById('routesTotal').innerText = `Routes total: ${result.length}`;
+            routesList.innerText = '';
+            result.forEach(el => renderRouteItem(el, routesList))
         } else {
             console.warn("Error accessing useNuxtApp()");
             // nuxtNotFound();
@@ -110,15 +114,13 @@ function runAssistant() {
                 messages,
                 getBrowserLocale,
             } = JSON.parse(result);
+            fetchedMessages = flattenI18n(messages);
 
             document.getElementById('currentLocale').textContent = activeLocale
             document.getElementById('defaultLocale').textContent = defaultLocale
             document.getElementById('browserLocale').textContent = getBrowserLocale
-            const i18nLocalesList = document.getElementById("i18nLocalesList");
-
-            i18nLocalesList.innerText = '';
-            createList(locales, i18nLocalesList)
-            fetchedMessages = flattenI18n(messages);
+            document.getElementById("i18nLocalesList").textContent = `Available locales: ${locales.join(', ')}`;
+            document.getElementById('messagesTotal').textContent = `Messages total: ${fetchedMessages.length}`;
             renderI18nList(fetchedMessages, i18nMessagesList)
         } else {
             document.querySelector('[data-id=i18n]').style.display = 'none';
@@ -158,20 +160,55 @@ function runAssistant() {
         document.querySelector(".nuxt-not-found").style.display = 'block';
     }
 
+    function renderConfigCards(configs, parentEl) {
+        for (const key in configs) {
+            const tabbedCard = document.createElement('div');
+            tabbedCard.className = 'tabbed-card';
+            const header = document.createElement('div');
+            header.className = 'tabbed-card__header';
+            header.textContent = key;
+            tabbedCard.appendChild(header);
+            const body = document.createElement('div');
+            body.className = 'tabbed-card__body';
+            tabbedCard.appendChild(body);
+            createList(configs[key], body);
+
+            parentEl.appendChild(tabbedCard);
+        }
+    }
+
     function renderRouteItem(route, parentEl) {
-        const routeItem = document.createElement("details");
-        routeItem.className = "routeItem";
+        console.log(route);
+        const routeItem = document.createElement("div");
+        routeItem.className = "route-item";
 
-        const summary = document.createElement("summary");
-        summary.textContent = route.path;
-        summary.setAttribute("title", route.name);
+        const statusWrapper = document.createElement("div");
+        statusWrapper.className = 'route-item__status';
+        const status = document.createElement("span");
+        if (activePath === route.name) {
+            status.className = 'active';
+        }
+        status.textContent = 'active';
+        statusWrapper.appendChild(status);
 
-        const dataElement = document.createElement("div");
-        createList(route, dataElement)
+        const path = document.createElement("div");
+        path.className = 'route-item__path';
+        path.textContent = route.path;
 
-        routeItem.appendChild(summary);
-        routeItem.appendChild(dataElement);
+        const name = document.createElement("div");
+        name.className = 'route-item__name';
+        name.textContent = route.name;
 
+        const labels = {...route.meta};
+        labels.default = route.props.default;
+        const labelWrapper = document.createElement("div");
+        labelWrapper.className = 'route-item__label';
+        labelWrapper.textContent = JSON.stringify(labels);
+
+        routeItem.appendChild(statusWrapper);
+        routeItem.appendChild(path);
+        routeItem.appendChild(name);
+        routeItem.appendChild(labelWrapper);
         parentEl.appendChild(routeItem);
     }
 
@@ -194,18 +231,17 @@ function runAssistant() {
 
             return typeof value;
         }
-        let labels = `[response type is ${getType(response)}`;
+        let labels = `Response: ${getType(response)}`;
         if (response.hasOwnProperty('length') && response.length > 1) {
-            labels += ` and contains ${response.length} items`
+            labels += `[${response.length} items]`
         }
-        labels += ']';
         const summary = document.createElement("summary");
         const prefixElement = document.createElement('span');
-        prefixElement.className = "routeItem__labels";
+        // prefixElement.className = "routeItem__labels";
         prefixElement.textContent = 'Request: ';
         summary.appendChild(prefixElement);
         summary.appendChild(document.createTextNode(hash));
-        const labelsElement = document.createElement('span');
+        const labelsElement = document.createElement('div');
         labelsElement.className = "routeItem__labels";
         labelsElement.textContent = labels;
         summary.appendChild(labelsElement);
@@ -215,7 +251,7 @@ function runAssistant() {
         if (error !== null) {
             data = `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`
         } else {
-            data = JSON.stringify(response, null, 2)
+            data = jsonSyntaxHighlight(JSON.stringify(response, null, 4));
         }
 
         const dataElement = document.createElement("div");
@@ -225,6 +261,25 @@ function runAssistant() {
         requestItem.appendChild(dataElement);
 
         requestsList.appendChild(requestItem);
+    }
+
+    function jsonSyntaxHighlight(json) {
+        json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|true|false|null|-?\d+(\.\d+)?([eE][+\-]?\d+)?)/g, function(match) {
+            let cls = 'json__number';
+            if (/^"/.test(match)) {
+                if (/:$/.test(match)) {
+                    cls = 'json__key';
+                } else {
+                    cls = 'json__string';
+                }
+            } else if (/true|false/.test(match)) {
+                cls = 'json__boolean';
+            } else if (/null/.test(match)) {
+                cls = 'json__null';
+            }
+            return '<span class="' + cls + '">' + match + '</span>';
+        });
     }
 
     // Configs tab
@@ -244,7 +299,7 @@ function runAssistant() {
                 createList(data[key], li);
             } else {
                 const span = document.createElement("span");
-                span.textContent = JSON.stringify(data[key]);
+                span.textContent = typeof data[key] === "object" ? '' : JSON.stringify(data[key]);
                 li.appendChild(span);
             }
 

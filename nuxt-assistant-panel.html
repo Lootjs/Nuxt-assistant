@@ -46,7 +46,17 @@
         <div class="main">
 
             <div id="common" class="tabcontent" style="display: flex">
-                <div class="heading">Overview</div>
+                <div class="section-head">
+                    <div class="section-head__label section-head__label--no-filter">
+                        <img src="./images/icon-nuxt.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">Overview</div>
+                        <div class="section-head__subtitle">This extension could help you with debugging Nuxt sites
+                            at Production
+                        </div>
+                    </div>
+                </div>
 
                 <div class="widgets">
                     <div class="widget">
@@ -98,29 +108,73 @@
             </div>
 
             <div id="routes" class="tabcontent">
-                <div class="heading">Current route</div>
-                <div id="currentRoute" class="full-width"></div>
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-router.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">Routes</div>
+                        <div class="section-head__subtitle" id="routesTotal"></div>
+                    </div>
+                </div>
 
-                <div class="divider divider--margined"></div>
-
-                <div class="heading">Route list</div>
-                <div id="routesList" class="full-width"></div>
+                <div class="routes routes--heading">
+                    <div class="route-item">
+                        <div class="route-item__status">
+                            Status
+                        </div>
+                        <div class="route-item__path">
+                            Path
+                        </div>
+                        <div class="route-item__name">
+                            Route name
+                        </div>
+                        <div class="route-item__label">
+                            Labels
+                        </div>
+                    </div>
+                </div>
+                <div class="routes" id="routesList"></div>
             </div>
 
             <div id="configs" class="tabcontent">
-                <div class="heading">Configurations</div>
-                <div id="configList"></div>
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-config.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">Configurations</div>
+                        <div class="section-head__subtitle">Nuxt provides a runtime config API to
+                            expose configuration and secrets within your application.
+                        </div>
+                    </div>
+                </div>
+                <div id="configList" class="flexbox"></div>
             </div>
 
             <div id="ssrData" class="tabcontent">
-                <div class="heading">SSR Data</div>
-                <div id="prerenderedAt"></div>
-                <div class="divider divider--margined"></div>
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-ssr.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">SSR Data</div>
+                        <div class="section-head__subtitle" id="prerenderedAt"></div>
+                    </div>
+                </div>
                 <div id="ssrRequestsList"></div>
             </div>
 
             <div id="i18n" class="tabcontent">
-                <div class="heading">i18n: {</div>
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-i18n.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">i18n overview</div>
+                        <div class="section-head__subtitle" id="i18nLocalesList"></div>
+                    </div>
+                </div>
 
                 <div class="widgets">
                     <div class="widget widget--covered">
@@ -151,13 +205,17 @@
                         </div>
                     </div>
                 </div>
-                <div class="section-end"></div>
 
-                <div class="heading heading--offset">Loaded locales: {</div>
-                <div id="i18nLocalesList"></div>
-                <div class="section-end"></div>
-
-                <div class="heading heading--offset">Messages: {</div>
+                <div class="divider--margined"></div>
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-i18n.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">i18n strings</div>
+                        <div class="section-head__subtitle" id="messagesTotal"></div>
+                    </div>
+                </div>
                 <div>
                     <input type="search" id="i18nMessagesInput" placeholder="Find a specific keys"/>
                 </div>
