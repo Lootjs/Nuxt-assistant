@@ -220,9 +220,6 @@ function runAssistant() {
         const requestItem = document.createElement("details");
         requestItem.className = "routeItem";
 
-        if (error !== null) {
-            requestItem.className += ' routeItem--hasError'
-        }
 
         const getType = (value) => {
             if (Array.isArray(value)) {
@@ -231,9 +228,15 @@ function runAssistant() {
 
             return typeof value;
         }
+
         let labels = `Response: ${getType(response)}`;
-        if (response.hasOwnProperty('length') && response.length > 1) {
-            labels += `[${response.length} items]`
+        if (error !== null) {
+            labels = 'Response: error'
+            requestItem.className += ' routeItem--hasError'
+        } else {
+            if (response && response.hasOwnProperty('length') && response.length > 1) {
+                labels += `[${response.length} items]`
+            }
         }
         const summary = document.createElement("summary");
         const prefixElement = document.createElement('span');
