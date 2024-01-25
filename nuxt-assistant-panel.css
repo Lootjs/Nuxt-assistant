@@ -35,9 +35,8 @@ ul > li span.silent {
 }
 
 .sidebar {
-    min-width: 9%;
+    min-width: 10%;
     min-height: 100vh;
-    border-right: 2px solid var(--secondary-color);
 }
 
 .header {
@@ -45,9 +44,8 @@ ul > li span.silent {
     color: #fff;
     gap: 8px;
     align-items: center;
-    padding: 0 0 10px 15px;
-    margin-top: 10px;
-    border-bottom: 1px solid var(--secondary-color);
+    padding: 0 0 18px 15px;
+    margin-top: 20px;
     user-select: none;
 }
 
@@ -92,21 +90,26 @@ ul > li span.silent {
     display: flex;
     flex-direction: column;
     flex-basis: 8%;
+    padding: 0 20px;
 }
 
 .tablinks {
     background-color: #020420;
     color: var(--secondary-color);
-    padding: 10px 15px;
+    padding: 10px 16px;
     border: 0;
     cursor: pointer;
     font-weight: 600;
     text-align: left;
-    border-bottom: 1px solid var(--secondary-color);
     display: flex;
     align-items: center;
     gap: 16px;
     transition: color 0.3s ease;
+    border-left: 1px solid var(--secondary-color);
+}
+
+.tablinks#refetch-trigger {
+    border-top: 1px dashed var(--secondary-color);
 }
 
 .tablinks img {
@@ -121,10 +124,12 @@ ul > li span.silent {
 
 .tablinks.active {
     color: var(--primary-color);
+    border-left: 1px solid var(--primary-color);
 }
 
 .tablinks:hover {
-    color: var(--primary-color);
+    color: #fff;
+    border-left: 1px solid #fff;
 }
 
 .divider {
@@ -388,11 +393,12 @@ ul > li span.silent {
 .section-head__title {
     font-size: 36px;
     color: #fff;
+    font-weight: 600;
 }
 
 .section-head__subtitle {
     font-size: 16px;
-    color: var(--secondary-color);
+    color: #909eb2;
 }
 
 .json__string { color: #C3E88D; }
@@ -526,4 +532,26 @@ input#i18nMessagesInput {
 
 .refetch-trigger:hover {
     background: #16c37e;
+}
+
+table.internals {
+    border-radius: 6px;
+    border-collapse: separate;
+    border: 1px solid #334155;
+    border-spacing: 0;
+}
+
+table.internals th,
+table.internals td {
+    border: none;
+    padding: 10px;
+    color: #fff;
+}
+
+table.internals tbody td {
+    background-color: #1e293b;
+}
+
+tbody tr td:nth-child(1) {
+    color: #FFCB6B;
 }

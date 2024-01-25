@@ -18,29 +18,27 @@
             </div>
             <div class="tabs" id="tablinkNavigator">
                 <div class="tablinks active" data-id="common">
-                    <img src="./images/icon-overview.svg" alt=""/>
                     Overview
                 </div>
                 <div class="tablinks" data-id="routes">
-                    <img src="./images/icon-router.svg" alt=""/>
                     Routes
                 </div>
                 <div class="tablinks" data-id="ssrData">
-                    <img src="./images/icon-ssr.svg" alt=""/>
                     SSR Data
                 </div>
                 <div class="tablinks" data-id="configs">
-                    <img src="./images/icon-config.svg" alt=""/>
                     Configs
                 </div>
                 <div class="tablinks" data-id="i18n">
-                    <img src="./images/icon-i18n.svg" alt=""/>
                     i18n
                 </div>
+                <div class="tablinks" data-id="internals">
+                    Internals
+                </div>
+                <div class="tablinks"  id="refetch-trigger">
+                    Restart Nuxt Assistant
+                </div>
             </div>
-            <button class="refetch-trigger" id="refetch-trigger">
-                Restart Nuxt Assistant
-            </button>
         </div>
 
         <div class="main">
@@ -51,9 +49,9 @@
                         <img src="./images/icon-overview.svg" alt=""/>
                     </div>
                     <div class="section-head__body">
-                        <div class="section-head__title">Overview</div>
-                        <div class="section-head__subtitle">This extension could help you with debugging Nuxt sites
-                            at Production
+                        <div class="section-head__title">Debug Nuxt sites at Production</div>
+                        <div class="section-head__subtitle">
+                            Build ID: <span id="buildId"></span>
                         </div>
                     </div>
                 </div>
@@ -220,6 +218,44 @@
                     <input type="search" id="i18nMessagesInput" placeholder="Find a specific keys"/>
                 </div>
                 <div id="i18nMessagesList"></div>
+                <div class="section-end"></div>
+            </div>
+
+            <div id="internals" class="tabcontent">
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-config.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">Plugins</div>
+                    </div>
+                </div>
+
+                <div id="pluginsList"></div>
+                <div class="section-end"></div>
+
+                <div class="divider--margined"></div>
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-config.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">Directives</div>
+                    </div>
+                </div>
+                <div id="directivesList"></div>
+                <div class="section-end"></div>
+
+                <div class="divider--margined"></div>
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-config.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">Hooks</div>
+                    </div>
+                </div>
+                <div id="hooksList"></div>
                 <div class="section-end"></div>
             </div>
         </div>

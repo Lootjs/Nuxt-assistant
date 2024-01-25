@@ -75,7 +75,10 @@ function runAssistant() {
 
             const configList = document.getElementById("configList");
             configList.innerText = '';
-            renderConfigCards(flags.config, configList);
+            renderConfigCards({
+                ...flags.config,
+                state: flags.state
+            }, configList);
         } else {
             console.warn("Error accessing useNuxtApp()");
             nuxtNotFound();
@@ -129,6 +132,87 @@ function runAssistant() {
         }
     });
 
+    const extractInternals = `
+    JSON.stringify({
+        buildId: window.useNuxtApp()._appConfig.nuxt.buildId,
+        plugins: Object.getOwnPropertyNames(window.useNuxtApp().vueApp.config.globalProperties),
+        hooks: window.useNuxtApp().hooks._hooks
+    })`;
+
+    chrome.devtools.inspectedWindow.eval(extractInternals, (result, isException) => {
+        if (isException) {
+            console.warn('Cannot load internal info');
+
+            return void(0);
+        }
+
+        const data = JSON.parse(result);
+
+        document.getElementById('buildId').textContent = data.buildId;
+
+        const excludeElements = ['$router', '$route', '$nuxt', '$config', 'previousRoute'];
+        const cleanedPlugins = data.plugins.filter(plugin => {
+            if (plugin.length < 4) {
+                return false;
+            }
+
+            return !excludeElements.includes(plugin)
+        });
+        const pluginsList = document.getElementById("pluginsList");
+        pluginsList.innerText = '';
+        const table = createTableFromArray(cleanedPlugins);
+        pluginsList.appendChild(table);
+
+        const hooksList = document.getElementById("hooksList");
+        hooksList.innerText = '';
+
+        if (Object.keys(data.hooks).length) {
+            const table = document.createElement('table');
+            table.className = 'internals';
+            const thead = document.createElement('thead');
+            const tbody = document.createElement('tbody');
+
+            thead.innerHTML = '<tr><th>Hook</th><th>Listeners count</th></tr>';
+
+            table.appendChild(thead);
+
+            Object.entries(data.hooks).forEach(([hookName, content]) => {
+                const tr = document.createElement('tr');
+                const tdElement = document.createElement('td');
+                const tdUrl = document.createElement('td');
+                const span = document.createElement('span');
+
+                tdElement.textContent = hookName;
+                span.textContent = content.length;
+                tdUrl.appendChild(span);
+
+                tr.appendChild(tdElement);
+                tr.appendChild(tdUrl);
+
+                tbody.appendChild(tr);
+            });
+
+            table.appendChild(tbody);
+            hooksList.appendChild(table);
+        }
+    });
+
+    chrome.devtools.inspectedWindow.eval('window.useNuxtApp().vueApp._context.directives', (result, isException) => {
+        if (isException) {
+            console.warn('Cannot load directives');
+
+            return void(0);
+        }
+
+        const directivesList = document.getElementById("directivesList");
+        directivesList.innerText = '';
+        const directives = {};
+        Object.entries(result).forEach(([name, contains]) => {
+            directives[`Directive "${name}" contains:`] = contains;
+        });
+        renderConfigCards(directives, directivesList);
+    });
+
     function openTab(evt, tabName) {
         let i, tabcontent, tablinks;
 
@@ -147,7 +231,7 @@ function runAssistant() {
     }
 
     document.getElementById('tablinkNavigator').addEventListener('click', (event) => {
-        if (event.target.classList.contains("tablinks")) {
+        if (event.target.classList.contains("tablinks") && event.target.id !== 'refetch-trigger') {
             const id = event.target.dataset.id;
 
             openTab(event, id);
@@ -162,6 +246,9 @@ function runAssistant() {
 
     function renderConfigCards(configs, parentEl) {
         for (const key in configs) {
+            if (Object.keys(configs[key]).length === 0) {
+                break;
+            }
             const tabbedCard = document.createElement('div');
             tabbedCard.className = 'tabbed-card';
             const header = document.createElement('div');
@@ -178,7 +265,6 @@ function runAssistant() {
     }
 
     function renderRouteItem(route, parentEl) {
-        console.log(route);
         const routeItem = document.createElement("div");
         routeItem.className = "route-item";
 
@@ -370,6 +456,42 @@ function runAssistant() {
 
         renderI18nList(messages, i18nMessagesList)
     })
+
+    function createTableFromArray(list) {
+        const table = document.createElement('table');
+        table.className = 'internals';
+        const thead = document.createElement('thead');
+        const tbody = document.createElement('tbody');
+
+        thead.innerHTML = '<tr><th>Item</th><th>URL</th></tr>';
+
+        table.appendChild(thead);
+
+        list.forEach(item => {
+            const tr = document.createElement('tr');
+            const tdElement = document.createElement('td');
+            const tdUrl = document.createElement('td');
+            const span = document.createElement('span');
+
+            const name = camelToSnake(item);
+            tdElement.textContent = name;
+            span.textContent = `https://nuxt.com/modules/${name}`;
+            tdUrl.appendChild(span);
+
+            tr.appendChild(tdElement);
+            tr.appendChild(tdUrl);
+
+            tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+
+        return table;
+    }
+}
+
+function camelToSnake(str) {
+    return str.replace('$', '').replace(/([A-Z])/g, letter => `-${letter.toLowerCase()}`);
 }
 
 runAssistant()
