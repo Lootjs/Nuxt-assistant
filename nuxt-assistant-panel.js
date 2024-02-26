@@ -321,7 +321,7 @@ function runAssistant() {
         const requestsList = document.getElementById("ssrRequestsList");
         const requestItem = document.createElement("details");
         requestItem.className = "routeItem";
-        const THRESHOLD = 5;
+        const THRESHOLD = 15;
 
         const getType = (value) => {
             if (Array.isArray(value)) {
@@ -337,10 +337,7 @@ function runAssistant() {
             requestItem.className += ' routeItem--hasError'
         } else {
             if (response && response.hasOwnProperty('length') && response.length > 1) {
-                labels += `
-                [${response.length} items
-                ${response.length > THRESHOLD ? 'but only ' + THRESHOLD + ' will be shown' : ''}]
-                `
+                labels += ` [${response.length} items${response.length > THRESHOLD ? ', but only ' + THRESHOLD + ' will be shown' : ''}]`
             }
         }
         const summary = document.createElement("summary");
@@ -360,9 +357,10 @@ function runAssistant() {
             data = `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`
         } else {
             let _response = response;
-            if (response.length > THRESHOLD && Array.isArray(response)) {
+            if (response.length && response.length > THRESHOLD && Array.isArray(response)) {
                 _response = response.slice(0, THRESHOLD)
             }
+            _response = normalizeResponse(_response)
             data = jsonSyntaxHighlight(JSON.stringify(_response, null, 4));
         }
 
@@ -373,6 +371,33 @@ function runAssistant() {
         requestItem.appendChild(dataElement);
 
         requestsList.appendChild(requestItem);
+    }
+
+    function normalizeResponse(response) {
+        if (!Array.isArray(response)) {
+            return response
+        }
+        const MAX_DEPTH = 2;
+        function limitDepth(obj, maxDepth, currentDepth = 0) {
+            if (currentDepth > maxDepth) {
+                if (Array.isArray(obj)) {
+                    return `hidden-array[${obj.length}]`
+                }
+                return typeof obj === 'object' ? `hidden-object[${Object.keys(obj).length}]` : typeof obj;
+            }
+
+            if (typeof obj === 'object' && obj !== null) {
+                for (let key in obj) {
+                    if (typeof obj[key] === 'object') {
+                        obj[key] = limitDepth(obj[key], maxDepth, currentDepth + 1);
+                    }
+                }
+            }
+
+            return obj;
+        }
+
+        return response.map(log => limitDepth(log, MAX_DEPTH));
     }
 
     function jsonSyntaxHighlight(json) {
