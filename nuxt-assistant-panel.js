@@ -45,6 +45,24 @@ function runAssistant() {
     document.getElementById('refetch-trigger').onclick = runAssistant;
     let fetchedMessages = [];
 
+    const extractBuildId = `
+    JSON.stringify({
+        buildId: window.useNuxtApp()._appConfig.nuxt.buildId
+    })`;
+
+    chrome.devtools.inspectedWindow.eval(extractBuildId, (result, isException) => {
+        const buildIdContainer = document.getElementById('buildId');
+        if (isException) {
+            console.warn('Cannot load buildId');
+            buildIdContainer.textContent = 'N/A';
+
+            return void (0);
+        }
+
+        const data = JSON.parse(result);
+        buildIdContainer.textContent = data.buildId;
+    })
+
     chrome.devtools.inspectedWindow.eval(extractPayloadAndVersions, (result, isException) => {
         if (!isException) {
             document.querySelector(".nuxt-not-found").style.display = 'none';
@@ -69,6 +87,8 @@ function runAssistant() {
             document.getElementById('nuxt-version').textContent = versions.nuxt;
             document.getElementById('vue-version').textContent = versions.vue;
 
+            const requestsList = document.getElementById("ssrRequestsList");
+            requestsList.innerText = '';
             for (let key in flags.data) {
                 renderRequestItem(key, flags.data[key], flags._errors[key])
             }
@@ -134,7 +154,6 @@ function runAssistant() {
 
     const extractInternals = `
     JSON.stringify({
-        buildId: window.useNuxtApp()._appConfig.nuxt.buildId,
         plugins: Object.getOwnPropertyNames(window.useNuxtApp().vueApp.config.globalProperties),
         hooks: window.useNuxtApp().hooks._hooks
     })`;
@@ -147,8 +166,6 @@ function runAssistant() {
         }
 
         const data = JSON.parse(result);
-
-        document.getElementById('buildId').textContent = data.buildId;
 
         const excludeElements = ['$router', '$route', '$nuxt', '$config', 'previousRoute'];
         const cleanedPlugins = data.plugins.filter(plugin => {
@@ -302,10 +319,9 @@ function runAssistant() {
 
     function renderRequestItem(hash, response, error) {
         const requestsList = document.getElementById("ssrRequestsList");
-        requestsList.innerText = '';
         const requestItem = document.createElement("details");
         requestItem.className = "routeItem";
-
+        const THRESHOLD = 5;
 
         const getType = (value) => {
             if (Array.isArray(value)) {
@@ -321,7 +337,10 @@ function runAssistant() {
             requestItem.className += ' routeItem--hasError'
         } else {
             if (response && response.hasOwnProperty('length') && response.length > 1) {
-                labels += `[${response.length} items]`
+                labels += `
+                [${response.length} items
+                ${response.length > THRESHOLD ? 'but only ' + THRESHOLD + ' will be shown' : ''}]
+                `
             }
         }
         const summary = document.createElement("summary");
@@ -340,7 +359,11 @@ function runAssistant() {
         if (error !== null) {
             data = `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`
         } else {
-            data = jsonSyntaxHighlight(JSON.stringify(response, null, 4));
+            let _response = response;
+            if (response.length > THRESHOLD && Array.isArray(response)) {
+                _response = response.slice(0, THRESHOLD)
+            }
+            data = jsonSyntaxHighlight(JSON.stringify(_response, null, 4));
         }
 
         const dataElement = document.createElement("div");
@@ -436,6 +459,11 @@ function runAssistant() {
                         output.push({
                             key: `${locale}.${newKey}`,
                             value: obj[key][body][staticKey] || ''
+                        });
+                    } else if (obj[key] && typeof obj[key] === 'string') {
+                        output.push({
+                            key: `${locale}.${newKey}`,
+                            value: obj[key] || ''
                         });
                     }
                 }
