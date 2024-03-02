@@ -230,6 +230,23 @@ function runAssistant() {
         renderConfigCards(directives, directivesList);
     });
 
+    chrome.devtools.inspectedWindow.eval('window.useNuxtApp().vueApp._context.components', (result, isException) => {
+        if (isException) {
+            console.warn('Cannot load components');
+
+            return void(0);
+        }
+
+        const componentsList = document.getElementById("componentsList");
+        componentsList.innerText = '';
+        document.getElementById("components-subtitle").innerText = `Components total: ${Object.keys(result).length}`;
+        const components = {};
+        Object.entries(result).forEach(([name, contains]) => {
+            components[`Components "${name}" contains:`] = contains;
+        });
+        renderConfigCards(components, componentsList);
+    });
+
     function openTab(evt, tabName) {
         let i, tabcontent, tablinks;
 

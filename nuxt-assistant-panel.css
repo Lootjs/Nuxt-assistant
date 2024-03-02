@@ -391,7 +391,7 @@ ul > li span.silent {
 }
 
 .section-head__title {
-    font-size: 36px;
+    font-size: 28px;
     color: #fff;
     font-weight: 600;
 }
@@ -554,4 +554,11 @@ table.internals tbody td {
 
 tbody tr td:nth-child(1) {
     color: #FFCB6B;
+}
+
+/*components*/
+#componentsList {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
 }
