@@ -93,7 +93,7 @@ ul > li span.silent {
     padding: 0 20px;
 }
 
-.tablinks {
+.tablinks, .supportlink {
     background-color: #020420;
     color: var(--secondary-color);
     padding: 10px 16px;
@@ -110,6 +110,10 @@ ul > li span.silent {
 
 .tablinks#refetch-trigger {
     border-top: 1px dashed var(--secondary-color);
+}
+
+.supportlink {
+    color: var(--primary-color);
 }
 
 .tablinks img {

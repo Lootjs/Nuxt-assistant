@@ -564,4 +564,8 @@ function camelToSnake(str) {
     return str.replace('$', '').replace(/([A-Z])/g, letter => `-${letter.toLowerCase()}`);
 }
 
+document.getElementById('support-me').addEventListener('click', () => {
+    chrome.runtime.sendMessage({event: 'supportMe'});
+})
+
 runAssistant()
