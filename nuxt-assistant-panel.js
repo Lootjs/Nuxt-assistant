@@ -3,6 +3,7 @@ const extractPayloadAndVersions = `
         versions: window.useNuxtApp().versions,
         payload: window.useNuxtApp().payload,
         i18nIncluded: (window.useNuxtApp()).hasOwnProperty('$i18n'),
+        piniaInstalled: (window.useNuxtApp()).hasOwnProperty('$pinia')
     })
 `
 
@@ -28,6 +29,11 @@ const extractI18n = `
         getBrowserLocale: window.useNuxtApp().$i18n.getBrowserLocale()
     }) : null
 `
+const extractPinia = `
+    (window.useNuxtApp()).hasOwnProperty('$pinia') ? JSON.stringify({
+        ...window.useNuxtApp().payload.pinia
+    }) : null
+`
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (message.type === 'page-navigation') {
@@ -38,7 +44,8 @@ chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
 let activePath = '';
 
 function runAssistant() {
-    document.querySelector(".nuxt-not-found").textContent = 'Fetching..';
+    document.querySelector(".header__title").textContent = 'Fetching..';
+    setTimeout(() => document.querySelector(".header__title").textContent = 'Nuxt Assistant', 300)
     const i18nMessagesList = document.getElementById("i18nMessagesList")
     document.querySelectorAll('#i18n-included img, #server-rendered img')
         .forEach(el => el.style.display = 'none')
@@ -70,7 +77,7 @@ function runAssistant() {
             // document.querySelector(".panel-title").onclick = () => {};
             // document.querySelector("#debug-content").style.display = 'flex';
 
-            const {versions, payload, i18nIncluded} = JSON.parse(result);
+            const {versions, payload, i18nIncluded, piniaInstalled} = JSON.parse(result);
             const flags = {...payload};
             let formattedDate = null;
 
@@ -82,7 +89,9 @@ function runAssistant() {
 
             document.getElementById(`ssr-${flags.serverRendered ? 'true' : 'false'}`).style.display = 'block';
             document.getElementById(`i18n-${i18nIncluded ? 'true' : 'false'}`).style.display = 'block';
+            document.getElementById(`pinia-${piniaInstalled ? 'true' : 'false'}`).style.display = 'block';
 
+            document.querySelector('[data-id=pinia]').style.display = piniaInstalled ? 'inherit' : 'none';
             // console.log("Data from useNuxtApp():", flags);
             document.getElementById('nuxt-version').textContent = versions.nuxt;
             document.getElementById('vue-version').textContent = versions.vue;
@@ -247,6 +256,21 @@ function runAssistant() {
         renderConfigCards(components, componentsList);
     });
 
+    chrome.devtools.inspectedWindow.eval(extractPinia, (result, isException) => {
+        if (isException) {
+            console.warn('Cannot load pinia');
+
+            return void(0);
+        }
+
+        const piniaStores = JSON.parse(result);
+        console.log(piniaStores)
+        const piniaList = document.getElementById("piniaList");
+        piniaList.innerText = '';
+        renderConfigCards(piniaStores, piniaList);
+        //piniaList
+    });
+
     function openTab(evt, tabName) {
         let i, tabcontent, tablinks;
 
@@ -400,7 +424,7 @@ function runAssistant() {
                 if (Array.isArray(obj)) {
                     return `hidden-array[${obj.length}]`
                 }
-                return typeof obj === 'object' ? `hidden-object[${Object.keys(obj).length}]` : typeof obj;
+                return Object(obj) === obj ? `hidden-object[${Object.keys(obj).length}]` : typeof obj;
             }
 
             if (typeof obj === 'object' && obj !== null) {
