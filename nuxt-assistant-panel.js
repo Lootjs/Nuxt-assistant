@@ -29,11 +29,6 @@ const extractI18n = `
         getBrowserLocale: window.useNuxtApp().$i18n.getBrowserLocale()
     }) : null
 `
-const extractPinia = `
-    (window.useNuxtApp()).hasOwnProperty('$pinia') ? JSON.stringify({
-        ...window.useNuxtApp().payload.pinia
-    }) : null
-`
 
 chrome.runtime.onMessage.addListener(function(message, sender, sendResponse) {
     if (message.type === 'page-navigation') {
@@ -50,6 +45,8 @@ function runAssistant() {
     document.querySelectorAll('#i18n-included img, #server-rendered img')
         .forEach(el => el.style.display = 'none')
     document.getElementById('refetch-trigger').onclick = runAssistant;
+    let responseThresholdConfig = 20;
+    settingsController();
     let fetchedMessages = [];
 
     const extractBuildId = `
@@ -234,28 +231,72 @@ function runAssistant() {
         directivesList.innerText = '';
         const directives = {};
         Object.entries(result).forEach(([name, contains]) => {
-            directives[`Directive "${name}" contains:`] = contains;
+            directives[`v-${name}`] = contains;
         });
         renderConfigCards(directives, directivesList);
     });
 
-    chrome.devtools.inspectedWindow.eval('window.useNuxtApp().vueApp._context.components', (result, isException) => {
+    const extractComponents = `
+    function recurseReplaceFunction(item) {
+        //console.log(item);
+        if (Array.isArray(item)) {
+            return item.map(element => recurseReplaceFunction(element));
+        } else if (typeof item === 'object' && item !== null) {
+            const newItem = {};
+            for (const key in item) {
+                newItem[key] = recurseReplaceFunction(item[key]);
+            }
+            return newItem;
+        } else if (typeof item === 'function') {
+            return 'Function' + ('name' in item ? '<' + item.name + '>' : item);
+        } else {
+            return item;
+        }
+    }
+    recurseReplaceFunction(Object.values(window.useNuxtApp().vueApp._context.components));
+    `
+    chrome.devtools.inspectedWindow.eval(extractComponents, (result, isException) => {
         if (isException) {
             console.warn('Cannot load components');
 
             return void(0);
         }
-
+        // console.log({ result })
         const componentsList = document.getElementById("componentsList");
         componentsList.innerText = '';
-        document.getElementById("components-subtitle").innerText = `Components total: ${Object.keys(result).length}`;
+        document.getElementById("components-subtitle").innerText = `Components total: ${result.length}`;
         const components = {};
-        Object.entries(result).forEach(([name, contains]) => {
-            components[`Components "${name}" contains:`] = contains;
+
+        result.forEach((component) => {
+            components[`<${component.name}>`] = component;
         });
         renderConfigCards(components, componentsList);
     });
 
+    const extractPinia = `
+    // JSON.stringify(
+        window.useNuxtApp().hasOwnProperty('$pinia') ?
+            Array.from(window.useNuxtApp().$pinia._s).map(([storeName, store]) => {
+                const entries = Object.entries(store).filter(([prop]) => {
+                    return !prop.startsWith('$') && !prop.startsWith('_') 
+                }).map(([prop, value]) => {
+                    const type = typeof value;
+                    let returnValue = value;
+                    
+                    if (type === 'function') {
+                        returnValue = 'function';
+                    } else if (type === 'object') {
+                        returnValue = {}
+                    }
+                    return {[prop]: returnValue};
+                    
+                    return typeof value === 'function' ? 'function' : value
+                })
+                
+                return {[storeName]: entries}
+        }) : []
+    // );
+`
     chrome.devtools.inspectedWindow.eval(extractPinia, (result, isException) => {
         if (isException) {
             console.warn('Cannot load pinia');
@@ -263,12 +304,22 @@ function runAssistant() {
             return void(0);
         }
 
-        const piniaStores = JSON.parse(result);
-        console.log(piniaStores)
+        function transformArrayToObject(arr) {
+            const result = {};
+
+            arr.forEach(item => {
+                const key = Object.keys(item)[0];
+                result[key] = Object.assign({}, ...item[key]);
+            });
+
+            return result;
+        }
+
+        // console.log(transformArrayToObject(result))
+        // const piniaStores = JSON.parse(result);
         const piniaList = document.getElementById("piniaList");
         piniaList.innerText = '';
-        renderConfigCards(piniaStores, piniaList);
-        //piniaList
+        renderConfigCards(transformArrayToObject(result), piniaList);
     });
 
     function openTab(evt, tabName) {
@@ -362,7 +413,6 @@ function runAssistant() {
         const requestsList = document.getElementById("ssrRequestsList");
         const requestItem = document.createElement("details");
         requestItem.className = "routeItem";
-        const THRESHOLD = 15;
 
         const getType = (value) => {
             if (Array.isArray(value)) {
@@ -373,12 +423,12 @@ function runAssistant() {
         }
 
         let labels = `Response: ${getType(response)}`;
-        if (error !== null) {
+        if (error) {
             labels = 'Response: error'
             requestItem.className += ' routeItem--hasError'
         } else {
             if (response && response.hasOwnProperty('length') && response.length > 1) {
-                labels += ` [${response.length} items${response.length > THRESHOLD ? ', but only ' + THRESHOLD + ' will be shown' : ''}]`
+                labels += ` [${response.length} items${response.length > responseThresholdConfig ? ', but only ' + responseThresholdConfig + ' will be shown' : ''}]`
             }
         }
         const summary = document.createElement("summary");
@@ -394,12 +444,12 @@ function runAssistant() {
         summary.setAttribute("title", hash);
         let data = '';
 
-        if (error !== null) {
+        if (error) {
             data = `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`
         } else {
             let _response = response;
-            if (response.length && response.length > THRESHOLD && Array.isArray(response)) {
-                _response = response.slice(0, THRESHOLD)
+            if (response.length && response.length > responseThresholdConfig && Array.isArray(response)) {
+                _response = response.slice(0, responseThresholdConfig)
             }
             _response = normalizeResponse(_response)
             data = jsonSyntaxHighlight(JSON.stringify(_response, null, 4));
@@ -477,7 +527,15 @@ function runAssistant() {
                 createList(data[key], li);
             } else {
                 const span = document.createElement("span");
-                span.textContent = typeof data[key] === "object" ? '' : JSON.stringify(data[key]);
+                span.className = 'item-value';
+                // console.log(typeof data[key])
+                if (typeof data[key] === "object") {
+                    span.textContent = JSON.stringify(data[key])
+                } else if (typeof data[key] === 'boolean') {
+                    span.textContent = `Boolean<${data[key] ? 'true' : 'false'}>`
+                } else {
+                    span.textContent = data[key]
+                }
                 li.appendChild(span);
             }
 
@@ -581,6 +639,27 @@ function runAssistant() {
         table.appendChild(tbody);
 
         return table;
+    }
+
+
+    function settingsController ()  {
+        chrome.storage.local.get('responseThreshold', function(data) {
+            responseThresholdConfig = data.responseThreshold || 20
+            document.getElementById('response-threshold-config').value = responseThresholdConfig;
+        });
+
+        document.getElementById('save-settings').addEventListener('click', () => {
+            const thresholdValue = parseInt(document.getElementById('response-threshold-config').value);
+            chrome.storage.local.set({ responseThreshold: thresholdValue }, function() {
+                if (chrome.runtime.lastError) {
+                    console.error(chrome.runtime.lastError);
+                } else {
+                    console.log('ok');
+                }
+            });
+            runAssistant();
+            openTab({ target: document.querySelector('[data-id=common]')}, 'common')
+        })
     }
 }
 

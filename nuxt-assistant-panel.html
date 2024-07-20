@@ -41,8 +41,11 @@
                 <div class="tablinks" data-id="components">
                     Components
                 </div>
-                <div class="tablinks"  id="refetch-trigger">
+                <div class="tablinks" id="refetch-trigger">
                     Restart Nuxt Assistant
+                </div>
+                <div class="tablinks" data-id="settings">
+                    Settings
                 </div>
                 <div class="supportlink" id="support-me">
                     Support me on Patreon
@@ -307,6 +310,26 @@
                     </div>
                 </div>
                 <div id="componentsList"></div>
+            </div>
+
+
+            <div id="settings" class="tabcontent">
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-config.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">Settings</div>
+                        <div class="section-head__subtitle">Nuxt assistant will be reloaded after applying new settings</div>
+                    </div>
+                </div>
+                <div class="settings-body">
+                    <div class="form-group">
+                        <div class="form-group__label">Threshold for the number of items to display from API response:</div>
+                        <input id="response-threshold-config" type="number"/>
+                    </div>
+                    <button id="save-settings">Save</button>
+                </div>
             </div>
         </div>
     </div>

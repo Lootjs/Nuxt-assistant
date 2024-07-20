@@ -69,6 +69,10 @@ ul > li span.silent {
     color: var(--secondary-color);
 }
 
+.item-value {
+    word-wrap: break-word;
+}
+
 .full-width {
     width: 100%;
 }
@@ -569,4 +573,25 @@ tbody tr td:nth-child(1) {
 
 #piniaList {
     gap: 0.8rem;
+}
+
+#directivesList {
+    display: flex;
+    gap: 10px;
+}
+/** settings */
+.form-group {
+    padding: 5px 0;
+}
+
+.form-group input, #settings button {
+    border: 0;
+    padding: 6px 10px;
+    border-radius: .375rem;
+    margin-top: 10px;
+}
+
+#settings button {
+    background: var(--primary-color);
+    color: #1c1917;
 }
