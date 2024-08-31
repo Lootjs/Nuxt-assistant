@@ -595,3 +595,8 @@ tbody tr td:nth-child(1) {
     background: var(--primary-color);
     color: #1c1917;
 }
+
+#pluginsList {
+    display: flex;
+    gap: 10px;
+}

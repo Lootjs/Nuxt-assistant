@@ -164,7 +164,7 @@ function runAssistant() {
         hooks: window.useNuxtApp().hooks._hooks
     })`;
 
-    chrome.devtools.inspectedWindow.eval(extractInternals, (result, isException) => {
+    chrome.devtools.inspectedWindow.eval(extractInternals, async (result, isException) => {
         if (isException) {
             console.warn('Cannot load internal info');
 
@@ -173,18 +173,44 @@ function runAssistant() {
 
         const data = JSON.parse(result);
 
-        const excludeElements = ['$router', '$route', '$nuxt', '$config', 'previousRoute'];
-        const cleanedPlugins = data.plugins.filter(plugin => {
-            if (plugin.length < 4) {
-                return false;
-            }
-
-            return !excludeElements.includes(plugin)
-        });
+        // const excludeElements = ['$router', '$route', '$nuxt', '$config', 'previousRoute'];
+        // const cleanedPlugins = data.plugins.filter(plugin => {
+        //     if (plugin.length < 4) {
+        //         return false;
+        //     }
+        //
+        //     return !excludeElements.includes(plugin)
+        // });
         const pluginsList = document.getElementById("pluginsList");
         pluginsList.innerText = '';
-        const table = createTableFromArray(cleanedPlugins);
-        pluginsList.appendChild(table);
+        const modules = {};
+        for (const moduleItem of data.plugins) {
+            const moduleName = moduleItem.replace('$', '');
+            try {
+                const response = await fetch(`https://api.nuxt.com/modules/${moduleName}`)
+                const apiData = await response.json();
+
+                if (apiData.statusCode === 404) {
+                    continue;
+                }
+                // console.log(apiData)
+                modules[apiData.name] = {
+                    description: apiData.description,
+                    website: apiData.website,
+                    category: apiData.category,
+                    maintainersCount: apiData.maintainers.length,
+                    compatibility: apiData.compatibility,
+                    version: apiData.stats.version,
+                    downloads: apiData.stats.downloads,
+                    stars: apiData.stats.stars,
+                }
+            } catch (e) {
+                console.log(e)
+            }
+        }
+        console.log(modules)
+        renderConfigCards(modules, pluginsList);
+        // pluginsList.appendChild(table);
 
         const hooksList = document.getElementById("hooksList");
         hooksList.innerText = '';
