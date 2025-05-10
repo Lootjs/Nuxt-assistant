@@ -597,13 +597,14 @@ function runAssistant() {
     // i18n tab
     function flattenI18n(data) {
         let output = [];
+        console.log(data)
         for (const locale in data) {
             function recurse(obj, current) {
                 for (const key in obj) {
                     let newKey = current ? `${current}.${key}` : key;
                     if (obj[key] && typeof obj[key] === 'object' && (!obj[key].hasOwnProperty('t') && !obj[key].end)) {
                         recurse(obj[key], newKey);
-                    } else if (obj[key].hasOwnProperty('t') || obj[key].hasOwnProperty('end')) {
+                    } else if (obj[key].hasOwnProperty('t')) {
                         const body = obj[key].body ? 'body' : 'b'
                         const staticKey = obj[key][body].static ? 'static' : 's'
                         output.push({
