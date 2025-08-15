@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Nuxt Assistant",
-  "version": "1.22",
-  "description": "Nuxt Assistant for cozy debugging Nuxt sites",
+  "version": "1.23",
+  "description": "Nuxt Assistant — developer-friendly debugging tool for Nuxt apps",
   "devtools_page": "nuxt-assistant.html",
   "icons": {
     "128": "images/icon128.png"

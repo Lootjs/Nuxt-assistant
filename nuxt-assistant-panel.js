@@ -4,6 +4,11 @@ const extractPayloadAndVersions = `
         payload: window.useNuxtApp().payload,
         i18nIncluded: (window.useNuxtApp()).hasOwnProperty('$i18n'),
         piniaInstalled: (window.useNuxtApp()).hasOwnProperty('$pinia')
+    }, function(key, value) {
+        if (key === 'payload') {
+            delete value.pinia;
+        }
+        return value;
     })
 `
 
@@ -205,10 +210,9 @@ function runAssistant() {
                     stars: apiData.stats.stars,
                 }
             } catch (e) {
-                console.log(e)
             }
         }
-        console.log(modules)
+        //console.log(modules)
         renderConfigCards(modules, pluginsList);
         // pluginsList.appendChild(table);
 
