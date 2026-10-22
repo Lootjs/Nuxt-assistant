@@ -37,10 +37,11 @@ function installFakeNuxtApp() {
         },
         $i18n: {
             defaultLocale: 'en',
-            locale: { value: 'en' },
-            localeCodes: { value: ['en', 'ar'] },
+            // Refs, like in the composition mode of vue-i18n
+            locale: { __v_isRef: true, value: 'en' },
+            localeCodes: { __v_isRef: true, value: ['en', 'ar'] },
             getBrowserLocale: () => 'ar',
-            messages: { value: { en: { hello: { t: 0, b: { t: 2, s: 'Hello' } }, compiled: function compiled() {} }, ar: {} } },
+            messages: { __v_isRef: true, value: { en: { hello: { t: 0, b: { t: 2, s: 'Hello' } }, compiled: function compiled() {} }, ar: {} } },
         },
         $pinia: { _s: new Map([['user', createUserStore()]]) },
         hooks: { _hooks: { 'app:mounted': [() => {}, () => {}], 'page:finish': [() => {}] } },
@@ -52,6 +53,13 @@ function installFakeNuxtApp() {
                     RouterLink: {
                         name: 'RouterLink',
                         props: { to: { type: [String, Object], required: true }, replace: Boolean, custom: { validator: function validator() {} } },
+                    },
+                    // defineAsyncComponent() wrappers: __asyncResolved is set once the component has been loaded
+                    LazyBanner: { name: 'AsyncComponentWrapper', __asyncLoader() {}, __asyncResolved: undefined },
+                    LazyCard: {
+                        name: 'AsyncComponentWrapper',
+                        __asyncLoader() {},
+                        __asyncResolved: { name: 'Card', props: { size: { type: Number, default: 1 } }, render() {} },
                     },
                 },
             },
@@ -96,7 +104,10 @@ export function installChromeStub(initialPage) {
                     try {
                         result = vm.runInContext(expression, page);
                     } catch (error) {
-                        callback(undefined, { isException: true, description: String(error) });
+                        // Like in Chrome: "TypeError: message" followed by the "at ..." lines of the stack trace
+                        // (Node prefixes vm stacks with the failing source line, so they're rebuilt)
+                        const frames = String(error.stack ?? '').split('\n').filter(line => /^\s+at /.test(line));
+                        callback(undefined, { isException: true, description: [String(error), ...frames].join('\n') });
 
                         return;
                     }
@@ -107,6 +118,7 @@ export function installChromeStub(initialPage) {
         runtime: {
             onMessage: { addListener: listener => messageListeners.push(listener) },
             sendMessage() {},
+            getManifest: () => ({ version: '1.24' }),
             lastError: undefined,
         },
         storage: {

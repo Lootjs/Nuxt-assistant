@@ -29,6 +29,10 @@ before(async () => {
     await wait(50);
 });
 
+test('shows the extension version from the manifest in the header', () => {
+    assert.equal(text('#extensionVersion'), 'v1.24');
+});
+
 test('fills every tab from the inspected page', () => {
     assert.equal(text('#buildId'), 'build-1');
     assert.equal(text('#nuxt-version'), '4.5.2');
@@ -36,7 +40,7 @@ test('fills every tab from the inspected page', () => {
     assert.equal(text('#payload-size'), 'N/A');
     assert.equal(text('#routes-count'), '2');
     assert.equal(text('#ssr-requests-count'), '1');
-    assert.equal(text('#components-count'), '1');
+    assert.equal(text('#components-count'), '3');
     assert.equal(text('#messagesTotal'), 'Messages total: 2 (en: 2)');
     assert.equal(text('.route-item--active .route-item__name'), 'claims-id___en');
     assert.deepEqual(headers('#configList'), ['public', 'state']);
@@ -88,7 +92,7 @@ test('shows a load error in the tab whose data failed, the rest still renders', 
 
     assert.match(text('#routesList .load-error'), /Couldn't load this section: .*Router is broken/);
     assert.equal(text('#routes-count'), 'N/A');
-    assert.equal(text('#components-count'), '1');
+    assert.equal(text('#components-count'), '3');
     assert.equal(text('.header__title'), 'Nuxt Assistant');
 });
 

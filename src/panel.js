@@ -1,4 +1,5 @@
 import { collectSnapshot } from './snapshot.js';
+import { setText } from './dom.js';
 import { renderSection } from './sections.js';
 import { fetchModuleInfo, getModuleCandidates } from './modules-api.js';
 import { clearTabBadges, openTab, setTabVisible, setupNavigation } from './navigation.js';
@@ -118,6 +119,8 @@ chrome.runtime.onMessage.addListener(message => {
     }
 });
 
+// Always matches manifest.json, so it never needs a manual update
+setText('extensionVersion', `v${chrome.runtime.getManifest().version}`);
 setupNavigation({ onRefresh: runAssistant });
 document.querySelector('.nuxt-not-found').addEventListener('click', () => runAssistant());
 setupOverview();

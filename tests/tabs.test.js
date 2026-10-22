@@ -171,6 +171,48 @@ test('routes show meta as chips and hide the meta column when no route has meta'
     assert.ok(document.getElementById('routes').classList.contains('routes--no-meta'));
 });
 
+test('i18n explains that messages of a custom i18n cannot be read', () => {
+    setupI18n();
+    renderI18n({
+        activeLocale: 'eng-e1',
+        defaultLocale: null,
+        browserLocale: null,
+        locales: [],
+        messages: null,
+        api: ['locale', 'localeHead', 'localePath', 't'],
+    });
+
+    assert.equal(text('#currentLocale'), 'eng-e1');
+    assert.equal(text('#i18nLocalesList'), 'Available locales: N/A');
+    assert.equal(text('#messagesTotal'),
+        "$i18n of this app isn't vue-i18n, so its messages can't be read. It provides: locale, localeHead, localePath, t.");
+    assert.match(text('#missingTotal'), /Not available/);
+    assert.equal(document.getElementById('i18nMessagesInput').disabled, true);
+    assert.equal(document.getElementById('i18nMessagesList').hidden, true);
+
+    // The next page uses vue-i18n again
+    renderI18n({ activeLocale: 'en', locales: ['en'], messages: { en: { hello: 'Hello' } }, api: null });
+    assert.equal(document.getElementById('i18nMessagesInput').disabled, false);
+    assert.equal(document.getElementById('i18nMessagesList').hidden, false);
+    assert.equal(all('#i18nMessagesList .i18nItem').length, 1);
+});
+
+test('i18n shows N/A for locales plain vue-i18n does not have', () => {
+    setupI18n();
+    renderI18n({
+        activeLocale: 'ar',
+        defaultLocale: null,
+        browserLocale: null,
+        locales: ['en', 'ar'],
+        messages: { en: { hello: 'Hello' }, ar: { hello: 'x' } },
+    });
+
+    assert.equal(text('#currentLocale'), 'ar');
+    assert.equal(text('#defaultLocale'), 'N/A');
+    assert.equal(text('#browserLocale'), 'N/A');
+    assert.equal(all('#i18nMessagesList .i18nItem').length, 2);
+});
+
 test('i18n lists messages, missing translations and searches by click', () => {
     setupI18n();
     renderI18n({
@@ -227,6 +269,17 @@ test('ssr data: failed requests go first, expand and collapse all', () => {
 
     document.getElementById('ssrCollapseAll').click();
     assert.ok(all('#ssrRequestsList > details').every(details => !details.open));
+});
+
+test('pinia shows an error in the card of a store that cannot be read', () => {
+    renderPinia({
+        broken: { error: '[Error: Store is broken]' },
+        user: { state: { name: 'John' }, getters: {}, actions: [] },
+    });
+
+    const [broken, user] = all('#piniaList .tabbed-card');
+    assert.equal(broken.querySelector('.load-error').textContent, "Couldn't read this store: [Error: Store is broken]");
+    assert.match(user.textContent, /name: "John"/);
 });
 
 test('pinia shows state and getters as trees and actions as chips', () => {

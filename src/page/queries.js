@@ -61,19 +61,29 @@ export function getI18n() {
         return null;
     }
 
-    const i18n = nuxtApp.$i18n;
-    // Messages compiled into functions would silently disappear during serialization
-    const messages = JSON.parse(JSON.stringify(
-        i18n.messages.value,
-        (key, value) => typeof value === 'function' ? '[compiled function]' : value,
-    ));
+    // @nuxtjs/i18n provides the global composer; a custom plugin may provide the createI18n() instance instead
+    const i18n = nuxtApp.$i18n.global ?? nuxtApp.$i18n;
+    // Composition mode keeps values in refs, legacy mode has plain values
+    const unref = value => value?.__v_isRef ? value.value : value;
 
+    // A custom i18n (not vue-i18n) may keep its messages in a closure, e.g. inside its t(): then messages is null
+    // and api lists what its $i18n provides, so the panel can explain why there's nothing to show
+    const rawMessages = unref(i18n.messages);
+    const hasMessages = typeof rawMessages === 'object' && rawMessages !== null;
+
+    // Messages compiled into functions would silently disappear during serialization
+    const messages = hasMessages
+        ? JSON.parse(JSON.stringify(rawMessages, (key, value) => typeof value === 'function' ? '[compiled function]' : value))
+        : null;
+
+    // localeCodes, defaultLocale and getBrowserLocale come from @nuxtjs/i18n, plain vue-i18n has none of them
     return {
-        defaultLocale: i18n.defaultLocale,
-        activeLocale: i18n.locale.value,
-        locales: i18n.localeCodes.value,
-        browserLocale: i18n.getBrowserLocale(),
+        defaultLocale: i18n.defaultLocale ?? null,
+        activeLocale: unref(i18n.locale) ?? null,
+        locales: unref(i18n.localeCodes) ?? i18n.availableLocales ?? (hasMessages ? Object.keys(messages) : []),
+        browserLocale: typeof i18n.getBrowserLocale === 'function' ? i18n.getBrowserLocale() ?? null : null,
         messages,
+        api: hasMessages ? null : Object.keys(i18n).filter(key => !key.startsWith('_')).sort(),
     };
 }
 
@@ -82,8 +92,11 @@ export function getInternals() {
 
     return {
         globalProperties: Object.getOwnPropertyNames(nuxtApp.vueApp.config.globalProperties),
+        // A removed hook may be left as undefined instead of an array of listeners
         hookListenerCounts: Object.fromEntries(
-            Object.entries(nuxtApp.hooks._hooks).map(([hookName, listeners]) => [hookName, listeners.length])
+            Object.entries(nuxtApp.hooks._hooks)
+                .filter(([, listeners]) => Array.isArray(listeners))
+                .map(([hookName, listeners]) => [hookName, listeners.length])
         ),
     };
 }
@@ -100,33 +113,56 @@ export function getDirectives() {
     );
 }
 
+// [{ name, props, emits, lazy, loaded }]: only what the Components tab shows, a whole component object
+// may hold render functions, nested components and circular references
 export function getComponents() {
     const nativeTypes = [String, Number, Boolean, Array, Object, Date, Function, Symbol, BigInt, Promise];
+    // Prop defaults are plain data, the limit only guards against circular or huge ones
+    const MAX_DEPTH = 5;
 
-    function replaceFunctions(item) {
+    function replaceFunctions(item, depth = 0) {
         if (nativeTypes.includes(item)) {
             return item.name;
         } else if (Array.isArray(item) && item.length && item.every(element => nativeTypes.includes(element))) {
             return item.map(element => element.name).join(' | ');
+        } else if (typeof item === 'object' && item !== null && depth >= MAX_DEPTH) {
+            return Array.isArray(item) ? '[Array]' : '[Object]';
         } else if (Array.isArray(item)) {
-            return item.map(element => replaceFunctions(element));
+            return item.map(element => replaceFunctions(element, depth + 1));
         } else if (typeof item === 'object' && item !== null) {
             const newItem = {};
             for (const key in item) {
-                newItem[key] = replaceFunctions(item[key]);
+                newItem[key] = replaceFunctions(item[key], depth + 1);
             }
             return newItem;
         } else if (typeof item === 'function') {
-            return 'Function' + ('name' in item ? '<' + item.name + '>' : item);
+            return `Function<${item.name}>`;
         } else {
             return item;
         }
     }
 
-    return replaceFunctions(Object.values(window.useNuxtApp().vueApp._context.components));
+    // The registration key is the name used in templates. Lazy components are defineAsyncComponent()
+    // wrappers named "AsyncComponentWrapper": their props are known once the component has been loaded
+    return Object.entries(window.useNuxtApp().vueApp._context.components).map(([name, component]) => {
+        const lazy = typeof component.__asyncLoader === 'function';
+        const resolved = lazy ? component.__asyncResolved : component;
+
+        if (!resolved) {
+            return { name, lazy, loaded: false };
+        }
+
+        return {
+            name,
+            lazy,
+            loaded: true,
+            props: replaceFunctions(resolved.props),
+            emits: replaceFunctions(resolved.emits),
+        };
+    });
 }
 
-// { storeName: { state, getters, actions: [names] } }
+// { storeName: { state, getters, actions: [names] } }, or { storeName: { error } } for a store that can't be read
 export function getPinia() {
     const nuxtApp = window.useNuxtApp();
 
@@ -137,6 +173,20 @@ export function getPinia() {
     // Limits keep big stores transferable (DevTools can't pass huge eval results)
     const MAX_DEPTH = 8;
     const MAX_ITEMS = 500;
+
+    // Reading a getter runs app code, which may throw, e.g. when the state it needs isn't loaded yet.
+    // The error is shown in place of the value, so one broken getter doesn't hide the other stores.
+    function describeError(error) {
+        return `[Error: ${error instanceof Error ? error.message : String(error)}]`;
+    }
+
+    function read(object, key) {
+        try {
+            return { value: object[key] };
+        } catch (error) {
+            return { error: describeError(error) };
+        }
+    }
 
     // Store values can be anything: circular references, Maps, Sets, Dates, class instances, huge lists
     function toPlain(value, depth, ancestors) {
@@ -178,7 +228,8 @@ export function getPinia() {
         } else {
             result = {};
             for (const key of Object.keys(value).slice(0, MAX_ITEMS)) {
-                result[key] = toPlain(value[key], depth + 1, ancestors);
+                const property = read(value, key);
+                result[key] = 'error' in property ? property.error : toPlain(property.value, depth + 1, ancestors);
             }
         }
 
@@ -188,7 +239,7 @@ export function getPinia() {
         return result;
     }
 
-    return Object.fromEntries(Array.from(nuxtApp.$pinia._s).map(([storeName, store]) => {
+    function describeStore(store) {
         const stateKeys = Object.keys(store.$state);
         const getters = {};
         const actions = [];
@@ -199,13 +250,24 @@ export function getPinia() {
                 continue;
             }
 
-            if (typeof store[key] === 'function') {
+            const property = read(store, key);
+            if ('error' in property) {
+                getters[key] = property.error;
+            } else if (typeof property.value === 'function') {
                 actions.push(key);
             } else {
-                getters[key] = toPlain(store[key], 1, new Set());
+                getters[key] = toPlain(property.value, 1, new Set());
             }
         }
 
-        return [storeName, { state: toPlain(store.$state, 0, new Set()), getters, actions }];
+        return { state: toPlain(store.$state, 0, new Set()), getters, actions };
+    }
+
+    return Object.fromEntries(Array.from(nuxtApp.$pinia._s).map(([storeName, store]) => {
+        try {
+            return [storeName, describeStore(store)];
+        } catch (error) {
+            return [storeName, { error: describeError(error) }];
+        }
     }));
 }

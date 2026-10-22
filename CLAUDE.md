@@ -35,6 +35,16 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
   page, so they can't use imports or anything declared outside the function body. Results must be
   JSON-serializable: convert functions, Maps, class instances to plain data inside the query.
   `tests/queries.test.js` checks this for every exported query.
+- Apps differ in versions and setups, so a query must not assume the shape of what it reads: check optional
+  props and refs before reading them. Known cases: `$i18n` may be the composer, the `createI18n()` instance
+  (`.global`), a legacy-mode instance with plain values instead of refs, or a custom non-vue-i18n object whose
+  messages are hidden in a closure (then `messages` is null and the tab explains it); `hooks._hooks` may contain
+  `undefined` for removed hooks; lazy global components are `defineAsyncComponent()` wrappers named
+  "AsyncComponentWrapper" (the real name is the registration key, props are in `__asyncResolved` once loaded).
+  Reading app data may run app code (Pinia getters, getter properties) that throws, e.g. when the state it
+  needs isn't loaded yet: catch per value and show the error in its place (see `read()` in `getPinia`),
+  so one broken value doesn't fail the whole section.
+  Add such cases to `tests/queries.test.js` with `createFakePage({ patch })`.
 - Never pass raw code strings to `chrome.devtools.inspectedWindow.eval`: they run in the page's global scope,
   so a top-level `const` breaks the next run ("already been declared"). Always go through `evalInPage`.
 - A new section = a query in `queries.js` + an entry in `SECTION_QUERIES` (`snapshot.js`) + a `renderSection()`
@@ -91,10 +101,3 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
   `tests/helpers/fake-page.js`; break it for a test with `createFakePage({ patch: () => { ... } })`.
 - Commit messages: `[v<manifest version>] feat|fix: description`, e.g. `[v1.24] fix: ...`.
   The version is bumped in `manifest.json`.
-
-## Backlog
-
-Ideas postponed during the refactoring, not started:
-
-- Refresh on client-side (SPA) navigation: now only full page loads trigger a refresh.
-- Routes search by a concrete URL (`/en/claims/123` → `/en/claims/:id`), e.g. with `router.resolve()` in the page.

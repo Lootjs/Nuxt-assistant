@@ -22,18 +22,43 @@ export function setupI18n() {
 // Drops messages of the previous run, so the search doesn't bring them back over a load error
 export function clearI18n() {
     messages = [];
+    // A load error is shown in the messages list, so it must be visible again
+    searchInput().disabled = false;
+    document.getElementById('i18nMessagesList').hidden = false;
     document.getElementById('i18nMissingList').replaceChildren();
     ['missingTotal', 'messagesTotal', 'i18nLocalesList', 'currentLocale', 'defaultLocale', 'browserLocale']
         .forEach(id => setText(id, ''));
 }
 
-export function renderI18n({ activeLocale, defaultLocale, browserLocale, locales, messages: rawMessages }) {
-    messages = flattenI18n(rawMessages);
+// A custom i18n (not vue-i18n) may hide its messages in a closure: say so instead of "Messages total: 0"
+function renderUnreadableMessages(api) {
+    messages = [];
+    searchInput().disabled = true;
 
-    setText('currentLocale', activeLocale);
-    setText('defaultLocale', defaultLocale);
-    setText('browserLocale', browserLocale);
-    setText('i18nLocalesList', `Available locales: ${locales.join(', ')}`);
+    const provided = api?.length ? ` It provides: ${api.join(', ')}.` : '';
+    setText('messagesTotal', `$i18n of this app isn't vue-i18n, so its messages can't be read.${provided}`);
+    setText('missingTotal', 'Not available: the messages of this i18n setup can\'t be read');
+    document.getElementById('i18nMissingList').replaceChildren();
+    // Hidden, or its CSS placeholder would claim "Messages are empty"
+    document.getElementById('i18nMessagesList').hidden = true;
+}
+
+export function renderI18n({ activeLocale, defaultLocale, browserLocale, locales, messages: rawMessages, api }) {
+    // Plain vue-i18n has no default and browser locales, those come from @nuxtjs/i18n
+    setText('currentLocale', activeLocale ?? 'N/A');
+    setText('defaultLocale', defaultLocale ?? 'N/A');
+    setText('browserLocale', browserLocale ?? 'N/A');
+    setText('i18nLocalesList', `Available locales: ${locales.length > 0 ? locales.join(', ') : 'N/A'}`);
+
+    if (rawMessages === null) {
+        renderUnreadableMessages(api);
+
+        return;
+    }
+
+    messages = flattenI18n(rawMessages);
+    searchInput().disabled = false;
+    document.getElementById('i18nMessagesList').hidden = false;
 
     const localeCounts = Object.entries(countMessagesByLocale(messages))
         .map(([locale, count]) => `${locale}: ${count}`)

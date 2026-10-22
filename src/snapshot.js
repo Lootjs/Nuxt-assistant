@@ -62,7 +62,7 @@ export async function collectSnapshot() {
         }
 
         // Failures are logged with console.debug: console.warn would flood the extension's error page
-        console.debug(`[Nuxt Assistant] ${SECTION_QUERIES[name].name} failed:`, result.reason.message);
+        console.debug(`[Nuxt Assistant] ${SECTION_QUERIES[name].name} failed:`, result.reason.details);
         sections[name] = { status: 'error', error: result.reason.message };
     });
 

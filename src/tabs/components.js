@@ -45,21 +45,26 @@ export function normalizeProps(props) {
     });
 }
 
+function getEmits(component) {
+    return Array.isArray(component.emits) ? component.emits : Object.keys(component.emits || {});
+}
+
 function createComponentCard(component) {
     const props = normalizeProps(component.props);
-    const emits = Array.isArray(component.emits) ? component.emits : Object.keys(component.emits || {});
+    const emits = getEmits(component);
 
     return el('div', { className: 'tabbed-card component-card' },
-        el('div', { className: 'tabbed-card__header' }, `<${component.name}>`),
+        el('div', { className: 'tabbed-card__header' },
+            `<${component.name}>`,
+            component.lazy && el('span', { className: 'chip component-card__lazy', title: 'Registered with defineAsyncComponent()' }, 'lazy'),
+        ),
         el('div', { className: 'tabbed-card__body' },
-            props.length > 0
-                ? createTable(['Prop', 'Type', 'Required', 'Default'], props.map(prop => [
-                    prop.name,
-                    el('span', { className: 'component-card__type' }, prop.type),
-                    prop.required ? el('span', { className: 'component-card__required' }, 'required') : '',
-                    el('code', {}, prop.defaultValue),
-                ]))
-                : el('div', { className: 'silent' }, 'No props'),
+            props.length > 0 && createTable(['Prop', 'Type', 'Required', 'Default'], props.map(prop => [
+                prop.name,
+                el('span', { className: 'component-card__type' }, prop.type),
+                prop.required ? el('span', { className: 'component-card__required' }, 'required') : '',
+                el('code', {}, prop.defaultValue),
+            ])),
             emits.length > 0 && el('div', { className: 'component-card__emits' },
                 el('span', { className: 'silent' }, 'Emits: '),
                 el('span', { className: 'chips' }, emits.map(event => el('span', { className: 'chip' }, event))),
@@ -68,9 +73,33 @@ function createComponentCard(component) {
     );
 }
 
-export function renderComponents(components) {
-    setText('components-subtitle',
-        `Globally registered components: ${components.length}. Auto-imported components of the project are not listed`);
+// Components with nothing to show in a table are listed by name in one card, so dozens of them stay compact
+function createNamesCard(title, hint, components) {
+    return el('div', { className: 'tabbed-card component-card component-card--names' },
+        el('div', { className: 'tabbed-card__header', title: hint }, `${title} (${components.length})`),
+        el('div', { className: 'tabbed-card__body' },
+            el('div', { className: 'chips' }, components.map(component => el('span', { className: 'chip' }, `<${component.name}>`))),
+        ),
+    );
+}
 
-    document.getElementById('componentsList').replaceChildren(...components.map(createComponentCard));
+export function renderComponents(components) {
+    const notLoaded = components.filter(component => component.loaded === false);
+    const loaded = components.filter(component => component.loaded !== false);
+    const withDetails = loaded.filter(component => normalizeProps(component.props).length > 0 || getEmits(component).length > 0);
+    const withoutDetails = loaded.filter(component => !withDetails.includes(component));
+
+    setText('components-subtitle', [
+        `Globally registered components: ${components.length}`,
+        notLoaded.length > 0 && `${notLoaded.length} lazy ones are not loaded yet`,
+        'Auto-imported components of the project are not listed',
+    ].filter(Boolean).join('. '));
+
+    // filter(Boolean): unlike el(), replaceChildren() would insert false as text
+    document.getElementById('componentsList').replaceChildren(...[
+        ...withDetails.map(createComponentCard),
+        withoutDetails.length > 0 && createNamesCard('Without props', 'Components without props and emits', withoutDetails),
+        notLoaded.length > 0 && createNamesCard('Lazy, not loaded yet',
+            'Their props are known once they are rendered on the page', notLoaded),
+    ].filter(Boolean));
 }

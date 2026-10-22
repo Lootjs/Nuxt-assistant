@@ -9,7 +9,11 @@ function createSection(title, content) {
     );
 }
 
-function createStoreBody({ state, getters, actions }) {
+function createStoreBody({ state, getters, actions, error }) {
+    if (error) {
+        return el('div', { className: 'load-error' }, `Couldn't read this store: ${error}`);
+    }
+
     return [
         createSection('state', createTree(state, { expandDepth: 1 })),
         Object.keys(getters).length > 0 && createSection('getters', createTree(getters, { expandDepth: 1 })),

@@ -70,10 +70,37 @@ test('shows emits and components without props', () => {
     const emits = name => [...card(name).querySelectorAll('.chip')].map(chip => chip.textContent);
     assert.deepEqual(emits('i18n-t'), ['update', 'close']);
     assert.deepEqual(emits('Dialog'), ['confirm', 'cancel']);
-    assert.equal(card('ClientOnly').querySelector('table'), null);
-    assert.match(card('ClientOnly').textContent, /No props/);
+    assert.equal(card('Dialog').querySelector('table'), null);
+    assert.equal(card('ClientOnly'), undefined);
     assert.equal(document.getElementById('components-subtitle').textContent,
         'Globally registered components: 3. Auto-imported components of the project are not listed');
+});
+
+const namesCard = title => [...document.querySelectorAll('#componentsList .component-card--names')]
+    .find(element => element.querySelector('.tabbed-card__header').textContent.startsWith(title));
+const chipNames = element => [...element.querySelectorAll('.chip')].map(chip => chip.textContent);
+
+test('lists components without details and lazy ones that are not loaded yet in compact cards', () => {
+    renderComponents([
+        { name: 'RouterLink', props: { to: 'String' } },
+        { name: 'ClientOnly', loaded: true },
+        { name: 'NuxtLoadingIndicator', props: {}, emits: [] },
+        ...Array.from({ length: 30 }, (_, index) => ({ name: `LazyBlock${index}`, lazy: true, loaded: false })),
+        { name: 'LazyCard', lazy: true, loaded: true, props: { size: { type: 'Number', default: 1 } } },
+    ]);
+
+    assert.deepEqual([...document.querySelectorAll('#componentsList > .tabbed-card:not(.component-card--names) .tabbed-card__header')]
+        .map(header => header.firstChild.textContent), ['<RouterLink>', '<LazyCard>']);
+    assert.equal(document.querySelector('.component-card__lazy').textContent, 'lazy');
+
+    assert.equal(namesCard('Without props').querySelector('.tabbed-card__header').textContent, 'Without props (2)');
+    assert.deepEqual(chipNames(namesCard('Without props')), ['<ClientOnly>', '<NuxtLoadingIndicator>']);
+    assert.equal(namesCard('Lazy, not loaded yet').querySelector('.tabbed-card__header').textContent, 'Lazy, not loaded yet (30)');
+    assert.equal(chipNames(namesCard('Lazy, not loaded yet')).length, 30);
+
+    assert.equal(document.getElementById('components-subtitle').textContent,
+        'Globally registered components: 34. 30 lazy ones are not loaded yet. Auto-imported components of the project are not listed');
+    assert.doesNotMatch(document.getElementById('componentsList').textContent, /false/);
 });
 
 test('inserts names from the page as text', () => {

@@ -1,8 +1,11 @@
-// An exception thrown in the inspected page, e.g. when the page isn't a Nuxt app
+// An exception thrown in the inspected page, e.g. when the page isn't a Nuxt app.
+// message is the first line of the description, for the UI; details keeps the stack trace, for the console
 export class PageEvalError extends Error {
     constructor(exceptionInfo) {
-        super(exceptionInfo.description || String(exceptionInfo.value || 'Evaluation in the inspected page failed'));
+        const description = exceptionInfo.description || String(exceptionInfo.value || 'Evaluation in the inspected page failed');
+        super(description.split('\n')[0]);
         this.name = 'PageEvalError';
+        this.details = description;
         this.exceptionInfo = exceptionInfo;
     }
 }

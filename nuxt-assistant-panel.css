@@ -47,9 +47,33 @@ body {
     user-select: none;
 }
 
+/* The title with the version next to it, sitting on the title's text baseline */
+.header__brand {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    min-width: 0;
+}
+
 .header__title {
     font-size: 18px;
     font-weight: 500;
+    white-space: nowrap;
+}
+
+/* The extension version; in a narrow panel it gets cut first, the refresh button stays */
+.chip.header__version {
+    min-width: 0;
+    overflow: hidden;
+    background: var(--background-color);
+    color: var(--secondary-color);
+    font-size: 10px;
+    line-height: 16px;
+    white-space: nowrap;
+}
+
+.header__version:empty {
+    display: none;
 }
 
 /* Refresh button in the header, spins while the data is loading */
@@ -517,6 +541,11 @@ div#i18nMessagesList:empty::after {
     width: 300px;
 }
 
+.search-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
 /* Small secondary buttons, e.g. "Expand all" or "Copy JSON" */
 .toolbar {
     display: flex;
@@ -733,6 +762,13 @@ div#i18nMessagesList:empty::after {
 .data-table code {
     font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace;
     color: var(--accent-color);
+}
+
+.component-card__lazy {
+    margin-left: 6px;
+    background: var(--background-color);
+    color: var(--secondary-color);
+    font-weight: 400;
 }
 
 .component-card__type {

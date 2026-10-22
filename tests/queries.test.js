@@ -22,7 +22,9 @@ test('rejects with PageEvalError when the page has no Nuxt', async () => {
 
     await assert.rejects(evalInPage(queries.getOverview), error => {
         assert.ok(error instanceof PageEvalError);
-        assert.match(error.message, /useNuxtApp is not a function/);
+        // The UI gets one line, the stack trace stays in details for the console
+        assert.equal(error.message, 'TypeError: window.useNuxtApp is not a function');
+        assert.match(error.details, /\n\s+at /);
 
         return true;
     });
@@ -94,6 +96,78 @@ test('getI18n keeps compiled messages instead of dropping them', async () => {
     assert.deepEqual(i18n.messages.en.hello, { t: 0, b: { t: 2, s: 'Hello' } });
 });
 
+test('getI18n reads the global composer when a plugin provides the createI18n() instance', async () => {
+    setPage(createFakePage({
+        patch: () => {
+            const nuxtApp = window.useNuxtApp();
+            nuxtApp.$i18n = { mode: 'composition', install() {}, global: nuxtApp.$i18n };
+        },
+    }));
+
+    const i18n = await evalInPage(queries.getI18n);
+    assert.equal(i18n.activeLocale, 'en');
+    assert.deepEqual(i18n.locales, ['en', 'ar']);
+    assert.equal(i18n.messages.en.hello.b.s, 'Hello');
+});
+
+test('getI18n supports the legacy mode of vue-i18n with plain values', async () => {
+    setPage(createFakePage({
+        patch: () => {
+            window.useNuxtApp().$i18n = {
+                locale: 'ar',
+                availableLocales: ['en', 'ar'],
+                messages: { en: { hello: 'Hello' }, ar: { hello: 'مرحبا' } },
+            };
+        },
+    }));
+
+    assert.deepEqual(await evalInPage(queries.getI18n), {
+        defaultLocale: null,
+        activeLocale: 'ar',
+        locales: ['en', 'ar'],
+        browserLocale: null,
+        messages: { en: { hello: 'Hello' }, ar: { hello: 'مرحبا' } },
+        api: null,
+    });
+});
+
+test('getI18n reports a custom i18n whose messages are hidden in a closure', async () => {
+    setPage(createFakePage({
+        patch: () => {
+            // Like a hand-written i18n plugin: messages live in the closure of t()
+            const dictionary = { title: 'Hello' };
+            window.useNuxtApp().$i18n = {
+                locale: 'eng-e1',
+                localeHead() {},
+                localePath: path => path,
+                t: key => dictionary[key] || '',
+                _internal: true,
+            };
+        },
+    }));
+
+    assert.deepEqual(await evalInPage(queries.getI18n), {
+        defaultLocale: null,
+        activeLocale: 'eng-e1',
+        locales: [],
+        browserLocale: null,
+        messages: null,
+        api: ['locale', 'localeHead', 'localePath', 't'],
+    });
+});
+
+test('getI18n takes the locales from the messages when nothing else lists them', async () => {
+    setPage(createFakePage({
+        patch: () => {
+            window.useNuxtApp().$i18n = { messages: { __v_isRef: true, value: { en: {}, de: {} } } };
+        },
+    }));
+
+    const i18n = await evalInPage(queries.getI18n);
+    assert.deepEqual(i18n.locales, ['en', 'de']);
+    assert.equal(i18n.activeLocale, null);
+});
+
 test('getInternals returns global properties and hook listener counts', async () => {
     assert.deepEqual(await evalInPage(queries.getInternals), {
         globalProperties: ['$router', '$i18n', '$pinia'],
@@ -101,11 +175,28 @@ test('getInternals returns global properties and hook listener counts', async ()
     });
 });
 
+test('getInternals skips removed hooks left as undefined', async () => {
+    setPage(createFakePage({
+        patch: () => {
+            window.useNuxtApp().hooks._hooks['page:start'] = undefined;
+        },
+    }));
+
+    assert.deepEqual((await evalInPage(queries.getInternals)).hookListenerCounts, { 'app:mounted': 2, 'page:finish': 1 });
+});
+
 test('getDirectives lists directive hooks', async () => {
     assert.deepEqual(await evalInPage(queries.getDirectives), {
         tooltip: { mounted: 'function', updated: 'function' },
         focus: { type: 'function' },
     });
+});
+
+test('getComponents names components by their registration and resolves lazy ones', async () => {
+    const [, notLoaded, loaded] = await evalInPage(queries.getComponents);
+
+    assert.deepEqual(notLoaded, { name: 'LazyBanner', lazy: true, loaded: false });
+    assert.deepEqual(loaded, { name: 'LazyCard', lazy: true, loaded: true, props: { size: { type: 'Number', default: 1 } } });
 });
 
 test('getComponents shows prop types by name', async () => {
@@ -126,4 +217,39 @@ test('getPinia splits stores into state, getters and actions, and makes the stat
             actions: ['logout'],
         },
     });
+});
+
+test('getPinia shows errors of app code in place of values, so the other stores still load', async () => {
+    setPage(createFakePage({
+        patch: () => {
+            const stores = window.useNuxtApp().$pinia._s;
+            // A getter that fails while the state it needs isn't loaded yet, like a minified "t.map is not a function"
+            const $state = { items: {}, owner: { get name() { throw new TypeError('owner is not loaded'); } } };
+            stores.set('cart', {
+                $id: 'cart',
+                $state,
+                ...$state,
+                get total() {
+                    return this.items.map(item => item.price);
+                },
+                clear() {},
+            });
+            stores.set('broken', {
+                $id: 'broken',
+                get $state() {
+                    throw new Error('Store is broken');
+                },
+            });
+        },
+    }));
+
+    const stores = await evalInPage(queries.getPinia);
+
+    assert.deepEqual(stores.cart, {
+        state: { items: {}, owner: { name: '[Error: owner is not loaded]' } },
+        getters: { total: '[Error: this.items.map is not a function]' },
+        actions: ['clear'],
+    });
+    assert.deepEqual(stores.broken, { error: '[Error: Store is broken]' });
+    assert.deepEqual(stores.user.getters, { fullName: 'John Doe' });
 });
