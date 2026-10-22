@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { setupPanelDom } from './helpers/panel-dom.js';
 import { renderOverview, setupOverview } from '../src/tabs/overview.js';
 import { renderSsrData } from '../src/tabs/ssr-data.js';
-import { renderRoutes } from '../src/tabs/routes.js';
+import { filterRoutes, renderRoutes, setupRoutes } from '../src/tabs/routes.js';
 import { renderI18n, setupI18n } from '../src/tabs/i18n.js';
 import { renderHooks, renderModules, renderDirectives } from '../src/tabs/internals.js';
 import { renderComponents } from '../src/tabs/components.js';
@@ -97,6 +97,44 @@ test('ssr data shows the prerender date only for prerendered pages', () => {
 
     renderSsrData({ data: {} });
     assert.equal(text('#prerenderedAt'), '');
+});
+
+const route = (path, name, meta = {}) => ({ path, name, meta, props: { default: false }, active: false });
+
+test('routes search matches the path, the name and the meta, case-insensitively', () => {
+    const routes = [
+        route('/en/claims/:id', 'claims-id___en', { layout: 'Claims' }),
+        route('/ar/claims/:id', 'claims-id___ar'),
+        route('/en/about', 'about___en', { middleware: 'auth' }),
+        route('/catch-all', undefined),
+    ];
+    const paths = query => filterRoutes(routes, query).map(({ path }) => path);
+
+    assert.deepEqual(paths('/EN/'), ['/en/claims/:id', '/en/about']);
+    assert.deepEqual(paths('___ar'), ['/ar/claims/:id']);
+    assert.deepEqual(paths('claims'), ['/en/claims/:id', '/ar/claims/:id']);
+    assert.deepEqual(paths('auth'), ['/en/about']);
+    assert.deepEqual(paths('  '), routes.map(({ path }) => path));
+    assert.deepEqual(paths('undefined'), []);
+});
+
+test('routes search filters the list and keeps the query after a refresh', () => {
+    setupRoutes();
+    renderRoutes([route('/en', 'index___en'), route('/ar', 'index___ar'), route('/en/about', 'about___en')]);
+
+    const search = document.getElementById('routesSearch');
+    search.value = '/en';
+    search.dispatchEvent(new Event('input'));
+
+    assert.equal(text('#routesTotal'), 'Routes: 2 of 3');
+    assert.deepEqual(all('#routesList .route-item__name').map(el => el.textContent), ['index___en', 'about___en']);
+
+    renderRoutes([route('/en', 'index___en'), route('/ar', 'index___ar')]);
+    assert.equal(text('#routesTotal'), 'Routes: 1 of 2');
+
+    search.value = 'nothing';
+    search.dispatchEvent(new Event('input'));
+    assert.equal(all('#routesList .route-item').length, 0);
 });
 
 test('routes mark the active one', () => {

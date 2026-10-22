@@ -45,8 +45,10 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
   extension's error page in `chrome://extensions`. Rendering errors are bugs and must not be swallowed.
 - Elements filled with data of the inspected page are marked with `data-page-content` in the HTML: they're
   cleared for a page without Nuxt. Mark new ones too; Overview and i18n values are cleared by
-  `clearOverview()` / `clearI18n()`. A renderer must also reset what it doesn't fill this time
-  (e.g. `prerenderedAt` for a page that isn't prerendered), or the previous page's value stays.
+  `clearOverview()` / `clearRoutes()` / `clearI18n()`. Tabs with a search (Routes, i18n) keep their data
+  in module state for filtering: reset it in their `clear*()` and call that on a load error too.
+  A renderer must also reset what it doesn't fill this time (e.g. `prerenderedAt` for a page that
+  isn't prerendered), or the previous page's value stays.
 - Toggle visibility with the `hidden` attribute (a global `[hidden]` rule in the CSS wins over `display: flex`
   classes) and switch tabs with the `active` class via `openTab()`. Don't set `style.display`.
 - Overview and i18n cards are generated from lists in `tabs/overview.js` / `tabs/i18n.js` with
@@ -83,4 +85,5 @@ Ideas postponed during the refactoring, not started:
 
 - Refresh on client-side (SPA) navigation: now only full page loads trigger a refresh.
 - Pinia: show object state with a depth limit (like `normalizeResponse`) instead of `{}`.
-- Search on the Routes tab; drop the `{"default":false}` noise from route labels.
+- Drop the `{"default":false}` noise from route labels.
+- Routes search by a concrete URL (`/en/claims/123` → `/en/claims/:id`), e.g. with `router.resolve()` in the page.

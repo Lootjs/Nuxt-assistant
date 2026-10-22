@@ -27,7 +27,8 @@ Automated tests use a fake Nuxt app, so check the real extension before publishi
 2. Open a Nuxt site, open DevTools → "Nuxt Assistant" panel, and check every tab:
    - **Overview**: build ID, Nuxt and Vue versions, i18n / Pinia flags, Rendering, Routes, SSR requests,
      Inline payload, Global components. Clicking a card opens its tab.
-   - **Routes**: the current route is highlighted with the `active` badge.
+   - **Routes**: the current route is highlighted with the `active` badge; the search filters by path, name
+     or meta and the subtitle shows "Routes: N of M"; the query stays applied after "Refresh data".
    - **SSR Data**: requests with sizes, big arrays are truncated to the threshold from Settings.
    - **Configs**: runtime config and state cards, empty strings are shown as `""`.
    - **i18n**: locales, missing translations (clicking a key searches for it), case-insensitive search.

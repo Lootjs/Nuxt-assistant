@@ -207,6 +207,16 @@ ul > li span.silent {
     flex-direction: column;
 }
 
+#routes .routes-search {
+    margin-bottom: 10px;
+}
+
+#routesList:empty::after {
+    content: "No routes found";
+    padding: 10px;
+    color: var(--secondary-color);
+}
+
 .route-item {
     display: flex;
     gap: 10px;
@@ -440,7 +450,8 @@ div#i18nMessagesList:empty::after {
     color: var(--highlight-color);
 }
 
-input#i18nMessagesInput {
+/* Search fields of the Routes and i18n tabs */
+.search-input {
     border: 0;
     padding: 10px;
     border-radius: 5px;

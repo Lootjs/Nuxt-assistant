@@ -61,6 +61,21 @@ async function refreshWith(page) {
     await wait(50);
 }
 
+test('the routes search query survives a refresh', async () => {
+    const search = document.getElementById('routesSearch');
+    search.value = '___ar';
+    search.dispatchEvent(new window.Event('input'));
+
+    await refreshWith(createFakePage());
+
+    assert.equal(text('#routesTotal'), 'Routes: 1 of 2');
+    assert.equal(text('#routesList .route-item__name'), 'claims-id___ar');
+
+    search.value = '';
+    search.dispatchEvent(new window.Event('input'));
+    assert.equal(text('#routesTotal'), 'Routes total: 2');
+});
+
 test('shows a load error in the tab whose data failed, the rest still renders', async () => {
     await refreshWith(createFakePage({
         patch: () => {
@@ -117,12 +132,18 @@ test('shows "Nuxt is not found" and clears the previous page data on a page with
     }
     assert.equal(document.querySelector('#i18n-included img').hidden, true);
 
-    // The i18n search must not bring back messages of the previous page
+    // Searches must not bring back data of the previous page
     const search = document.getElementById('i18nMessagesInput');
     search.value = 'hello';
     search.dispatchEvent(new window.Event('input'));
     assert.equal(document.querySelectorAll('#i18nMessagesList .i18nItem').length, 0);
     search.value = '';
+
+    const routesSearch = document.getElementById('routesSearch');
+    routesSearch.value = 'claims';
+    routesSearch.dispatchEvent(new window.Event('input'));
+    assert.equal(document.querySelectorAll('#routesList .route-item').length, 0);
+    routesSearch.value = '';
 });
 
 test('the data comes back when the page has Nuxt again', async () => {

@@ -8,7 +8,7 @@
 - **Overview**: Nuxt and Vue versions, build ID, rendering mode (SSR / SSG / SPA), i18n and Pinia detection,
   and quick stats: routes, SSR requests, inline payload size and global components. Each card opens its tab.
 - **Routes**:
-    - All routes with their meta.
+    - All routes with their meta, with case-insensitive search by path, name or meta.
     - The current route is highlighted, dynamic routes (`/users/:id`) included.
 - **SSR Data**:
     - All requests made during server-side rendering, with their responses.

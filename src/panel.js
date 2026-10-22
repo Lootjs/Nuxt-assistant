@@ -6,7 +6,7 @@ import { loadSettings, setupSettings } from './settings.js';
 import { clearOverview, renderOverview, setupOverview } from './tabs/overview.js';
 import { renderSsrData } from './tabs/ssr-data.js';
 import { renderConfigs } from './tabs/configs.js';
-import { renderRoutes } from './tabs/routes.js';
+import { clearRoutes, renderRoutes, setupRoutes } from './tabs/routes.js';
 import { clearI18n, renderI18n, setupI18n } from './tabs/i18n.js';
 import { renderDirectives, renderHooks, renderModules } from './tabs/internals.js';
 import { renderComponents } from './tabs/components.js';
@@ -23,6 +23,7 @@ function setNuxtNotFoundVisible(isVisible) {
 function clearPageContent() {
     document.querySelectorAll('[data-page-content]').forEach(element => element.replaceChildren());
     clearOverview();
+    clearRoutes();
     clearI18n();
 }
 
@@ -35,7 +36,7 @@ function renderSnapshot(sections) {
         renderConfigs(payload);
     }, { errorContainers: ['ssrRequestsList', 'configList'] });
 
-    renderSection(sections.routes, renderRoutes, { errorContainers: ['routesList'] });
+    renderSection(sections.routes, renderRoutes, { errorContainers: ['routesList'], onError: clearRoutes });
 
     renderSection(sections.i18n, i18n => {
         setTabVisible('i18n', true);
@@ -117,6 +118,7 @@ chrome.runtime.onMessage.addListener(message => {
 setupNavigation({ onRefresh: runAssistant });
 document.querySelector('.nuxt-not-found').addEventListener('click', () => runAssistant());
 setupOverview();
+setupRoutes();
 setupI18n();
 setupSettings({
     onSave: () => {
