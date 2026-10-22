@@ -239,7 +239,7 @@ function runAssistant() {
             document.getElementById('vue-version').textContent = versions.vue;
 
             const requestsList = document.getElementById("ssrRequestsList");
-            requestsList.innerText = '';
+            requestsList.replaceChildren();
             const errors = flags._errors || {};
             const requestKeys = Object.keys(flags.data || {});
             let totalSize = 0;
@@ -251,7 +251,7 @@ function runAssistant() {
                 `Requests: ${requestKeys.length}, total size: ~${formatBytes(totalSize)}`;
 
             const configList = document.getElementById("configList");
-            configList.innerText = '';
+            configList.replaceChildren();
             renderConfigCards({
                 ...flags.config,
                 state: flags.state
@@ -267,8 +267,7 @@ function runAssistant() {
             const routesList = document.getElementById("routesList");
             document.getElementById('routesTotal').innerText = `Routes total: ${result.length}`;
             document.getElementById('routes-count').textContent = result.length;
-            routesList.innerText = '';
-            result.forEach(el => renderRouteItem(el, routesList))
+            routesList.replaceChildren(...result.map(createRouteItem));
         } else {
             logEvalFailure('Cannot load routes', isException);
         }
@@ -331,7 +330,7 @@ function runAssistant() {
         }
 
         const pluginsList = document.getElementById("pluginsList");
-        pluginsList.innerText = '';
+        pluginsList.replaceChildren();
         const modules = {};
         moduleInfos.filter(Boolean).forEach(({ name, ...info }) => {
             modules[name] = info;
@@ -339,36 +338,13 @@ function runAssistant() {
         renderConfigCards(modules, pluginsList);
 
         const hooksList = document.getElementById("hooksList");
-        hooksList.innerText = '';
+        hooksList.replaceChildren();
 
         if (Object.keys(data.hooks).length) {
-            const table = document.createElement('table');
-            table.className = 'internals';
-            const thead = document.createElement('thead');
-            const tbody = document.createElement('tbody');
-
-            thead.innerHTML = '<tr><th>Hook</th><th>Listeners count</th></tr>';
-
-            table.appendChild(thead);
-
-            Object.entries(data.hooks).forEach(([hookName, content]) => {
-                const tr = document.createElement('tr');
-                const tdElement = document.createElement('td');
-                const tdUrl = document.createElement('td');
-                const span = document.createElement('span');
-
-                tdElement.textContent = hookName;
-                span.textContent = content.length;
-                tdUrl.appendChild(span);
-
-                tr.appendChild(tdElement);
-                tr.appendChild(tdUrl);
-
-                tbody.appendChild(tr);
-            });
-
-            table.appendChild(tbody);
-            hooksList.appendChild(table);
+            hooksList.append(createTable(
+                ['Hook', 'Listeners count'],
+                Object.entries(data.hooks).map(([hookName, content]) => [hookName, el('span', {}, content.length)]),
+            ));
         }
     });
 
@@ -380,7 +356,7 @@ function runAssistant() {
         }
 
         const directivesList = document.getElementById("directivesList");
-        directivesList.innerText = '';
+        directivesList.replaceChildren();
         const directives = {};
         Object.entries(result).forEach(([name, contains]) => {
             directives[`v-${name}`] = contains;
@@ -395,7 +371,7 @@ function runAssistant() {
             return void(0);
         }
         const componentsList = document.getElementById("componentsList");
-        componentsList.innerText = '';
+        componentsList.replaceChildren();
         document.getElementById("components-subtitle").innerText =
             `Globally registered components: ${result.length}. Auto-imported components of the project are not listed`;
         document.getElementById('components-count').textContent = result.length;
@@ -426,7 +402,7 @@ function runAssistant() {
         }
 
         const piniaList = document.getElementById("piniaList");
-        piniaList.innerText = '';
+        piniaList.replaceChildren();
         renderConfigCards(transformArrayToObject(result), piniaList);
     });
 }
@@ -472,6 +448,48 @@ function logEvalFailure(message, exceptionInfo) {
     console.debug(`[Nuxt Assistant] ${message}`, exceptionInfo && (exceptionInfo.description || exceptionInfo.value) || '');
 }
 
+// DOM helpers
+
+/**
+ * Creates an element, e.g. el('div', { className: 'card', onClick: handler }, 'text', childElement)
+ * - className accepts an array, falsy items are skipped: ['item', isActive && 'item--active']
+ * - on* props are added as event listeners, the rest are assigned as element properties
+ * - string children are inserted as text, never as HTML; null, undefined and false are skipped
+ */
+function el(tag, props = {}, ...children) {
+    const element = document.createElement(tag);
+
+    for (const [name, value] of Object.entries(props)) {
+        if (value === undefined || value === null) {
+            continue;
+        }
+
+        if (name === 'className' && Array.isArray(value)) {
+            element.className = value.filter(Boolean).join(' ');
+        } else if (name.startsWith('on')) {
+            element.addEventListener(name.slice(2).toLowerCase(), value);
+        } else {
+            element[name] = value;
+        }
+    }
+
+    // Appended one by one: spreading thousands of i18n rows into append() may exceed the arguments limit
+    for (const child of children.flat()) {
+        if (child !== null && child !== undefined && child !== false) {
+            element.append(child);
+        }
+    }
+
+    return element;
+}
+
+function createTable(headings, rows) {
+    return el('table', { className: 'internals' },
+        el('thead', {}, el('tr', {}, headings.map(heading => el('th', {}, heading)))),
+        el('tbody', {}, rows.map(cells => el('tr', {}, cells.map(cell => el('td', {}, cell))))),
+    );
+}
+
 function openTab(evt, tabName) {
     let i, tabcontent, tablinks;
 
@@ -501,60 +519,30 @@ function renderConfigCards(configs, parentEl) {
         if (typeof config !== 'object' || config === null || Object.keys(config).length === 0) {
             continue;
         }
-        const tabbedCard = document.createElement('div');
-        tabbedCard.className = 'tabbed-card';
-        const header = document.createElement('div');
-        header.className = 'tabbed-card__header';
-        header.textContent = key;
-        tabbedCard.appendChild(header);
-        const body = document.createElement('div');
-        body.className = 'tabbed-card__body';
-        tabbedCard.appendChild(body);
-        createList(config, body);
-
-        parentEl.appendChild(tabbedCard);
+        parentEl.append(el('div', { className: 'tabbed-card' },
+            el('div', { className: 'tabbed-card__header' }, key),
+            el('div', { className: 'tabbed-card__body' }, createList(config)),
+        ));
     }
 }
 
-function renderRouteItem(route, parentEl) {
-    const routeItem = document.createElement("div");
-    routeItem.className = "route-item";
-
-    const path = document.createElement("div");
-    path.className = 'route-item__path';
-    path.textContent = route.path;
-
-    if (route.active) {
-        routeItem.className += ' route-item--active';
-        const badge = document.createElement("span");
-        badge.className = 'route-item__badge';
-        badge.textContent = 'active';
-        path.appendChild(badge);
-    }
-
-    const name = document.createElement("div");
-    name.className = 'route-item__name';
-    name.textContent = route.name;
-
+function createRouteItem(route) {
     const labels = {...route.meta};
     labels.default = route.props.default;
-    const labelWrapper = document.createElement("div");
-    labelWrapper.className = 'route-item__label';
-    labelWrapper.textContent = JSON.stringify(labels);
 
-    routeItem.appendChild(path);
-    routeItem.appendChild(name);
-    routeItem.appendChild(labelWrapper);
-    parentEl.appendChild(routeItem);
+    return el('div', { className: ['route-item', route.active && 'route-item--active'] },
+        el('div', { className: 'route-item__path' },
+            route.path,
+            route.active && el('span', { className: 'route-item__badge' }, 'active'),
+        ),
+        el('div', { className: 'route-item__name' }, route.name),
+        el('div', { className: 'route-item__label' }, JSON.stringify(labels)),
+    );
 }
 
 // Requests tab
 
 function renderRequestItem(hash, response, error) {
-    const requestsList = document.getElementById("ssrRequestsList");
-    const requestItem = document.createElement("details");
-    requestItem.className = "routeItem";
-
     const getType = (value) => {
         if (Array.isArray(value)) {
             return 'array'
@@ -567,47 +555,36 @@ function renderRequestItem(hash, response, error) {
     let labels = `Response: ${getType(response)}`;
     if (error) {
         labels = 'Response: error'
-        requestItem.className += ' routeItem--hasError'
     } else {
         if (response && response.hasOwnProperty('length') && response.length > 1) {
             labels += ` [${response.length} items${response.length > responseThresholdConfig ? ', but only ' + responseThresholdConfig + ' will be shown' : ''}]`
         }
-    }
-    const summary = document.createElement("summary");
-    const prefixElement = document.createElement('span');
-    prefixElement.textContent = 'Request: ';
-    summary.appendChild(prefixElement);
-    summary.appendChild(document.createTextNode(hash));
-    if (!error) {
         labels += ` · ~${formatBytes(size)}`
     }
-    const labelsElement = document.createElement('div');
-    labelsElement.className = "routeItem__labels";
-    if (size >= HEAVY_RESPONSE_BYTES) {
-        labelsElement.className += " routeItem__labels--heavy";
-    }
-    labelsElement.textContent = labels;
-    summary.appendChild(labelsElement);
-    summary.setAttribute("title", hash);
 
-    const dataElement = document.createElement("div");
-
+    let dataElement;
     if (error) {
-        // The error comes from the inspected page, so it must not be treated as HTML
-        dataElement.textContent = `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`
+        // The error comes from the inspected page, so it's inserted as text, not as HTML
+        dataElement = el('div', {}, `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`);
     } else {
         let _response = response;
         if (response.length && response.length > responseThresholdConfig && Array.isArray(response)) {
             _response = response.slice(0, responseThresholdConfig)
         }
         _response = normalizeResponse(_response)
-        dataElement.innerHTML = jsonSyntaxHighlight(JSON.stringify(_response, null, 4));
+        dataElement = el('div', { innerHTML: jsonSyntaxHighlight(JSON.stringify(_response, null, 4)) });
     }
 
-    requestItem.appendChild(summary);
-    requestItem.appendChild(dataElement);
-
-    requestsList.appendChild(requestItem);
+    document.getElementById("ssrRequestsList").append(
+        el('details', { className: ['routeItem', error && 'routeItem--hasError'] },
+            el('summary', { title: hash },
+                el('span', {}, 'Request: '),
+                hash,
+                el('div', { className: ['routeItem__labels', size >= HEAVY_RESPONSE_BYTES && 'routeItem__labels--heavy'] }, labels),
+            ),
+            dataElement,
+        )
+    );
 
     return size;
 }
@@ -671,61 +648,41 @@ function jsonSyntaxHighlight(json) {
 
 // Configs tab
 
-function createList(data, parentElement) {
-    const ul = document.createElement("ul");
-
-    for (let key in data) {
-        const li = document.createElement("li");
-        const span = document.createElement("span");
-        span.textContent = `${key}: `;
-        span.setAttribute('class', 'silent');
-
-        li.appendChild(span);
-
-        if (typeof data[key] === "object" && data[key] !== null && Object.keys(data[key]).length > 0) {
-            createList(data[key], li);
-        } else {
-            const span = document.createElement("span");
-            span.className = 'item-value';
-            if (typeof data[key] === "object") {
-                span.textContent = JSON.stringify(data[key])
-            } else if (data[key] === '') {
-                span.textContent = '""'
-            } else if (typeof data[key] === 'boolean') {
-                span.textContent = `Boolean<${data[key] ? 'true' : 'false'}>`
-            } else {
-                span.textContent = data[key]
-            }
-            li.appendChild(span);
-        }
-
-        ul.appendChild(li);
+function formatListValue(value) {
+    if (typeof value === "object") {
+        return JSON.stringify(value);
+    }
+    if (value === '') {
+        return '""';
+    }
+    if (typeof value === 'boolean') {
+        return `Boolean<${value ? 'true' : 'false'}>`;
     }
 
-    parentElement.appendChild(ul);
+    return String(value);
+}
+
+function createList(data) {
+    return el('ul', {}, Object.keys(data).map(key => {
+        const value = data[key];
+        const isNested = typeof value === "object" && value !== null && Object.keys(value).length > 0;
+
+        return el('li', {},
+            el('span', { className: 'silent' }, `${key}: `),
+            isNested
+                ? createList(value)
+                : el('span', { className: 'item-value' }, formatListValue(value)),
+        );
+    }));
 }
 
 function renderI18nList(data, parentElement) {
-    parentElement.innerText = '';
-    const wrapper = document.createElement("div");
-
-    data.forEach(({ key, value }) => {
-        const div = document.createElement("div");
-        div.setAttribute('class', 'i18nItem');
-        const keyWrapper = document.createElement("span");
-        keyWrapper.textContent = key;
-        keyWrapper.setAttribute('class', 'i18nItem__key');
-        const valueWrapper = document.createElement("span");
-        valueWrapper.setAttribute('class', 'i18nItem__value');
-        valueWrapper.textContent = value;
-
-        div.appendChild(keyWrapper);
-        div.appendChild(valueWrapper);
-
-        wrapper.appendChild(div);
-    });
-
-    parentElement.appendChild(wrapper);
+    parentElement.replaceChildren(el('div', {}, data.map(({ key, value }) =>
+        el('div', { className: 'i18nItem' },
+            el('span', { className: 'i18nItem__key' }, key),
+            el('span', { className: 'i18nItem__value' }, value),
+        )
+    )));
 }
 
 // i18n tab
@@ -843,7 +800,7 @@ function renderMissingTranslations(messages, locales) {
     const notLoadedLocales = locales.filter(locale => !loadedLocales.includes(locale));
     const subtitle = document.getElementById('missingTotal');
     const list = document.getElementById('i18nMissingList');
-    list.innerText = '';
+    list.replaceChildren();
 
     const notLoadedNote = notLoadedLocales.length
         ? `. Not loaded yet (lazy loading): ${notLoadedLocales.join(', ')}`
@@ -859,60 +816,31 @@ function renderMissingTranslations(messages, locales) {
         ? `${missing.length} keys are missing in some of the loaded locales${notLoadedNote}`
         : `All keys are translated in ${loadedLocales.join(', ')}${notLoadedNote}`;
 
-    missing.forEach(({ path, missingIn }) => {
-        const div = document.createElement("div");
-        div.className = 'i18nMissingItem';
-        div.title = 'Show the existing translations';
-        const keyWrapper = document.createElement("span");
-        keyWrapper.className = 'i18nMissingItem__key';
-        keyWrapper.textContent = path;
-        const localesWrapper = document.createElement("span");
-        localesWrapper.className = 'i18nMissingItem__locales';
-        localesWrapper.textContent = `missing in: ${missingIn.join(', ')}`;
+    const showTranslations = (path) => {
+        const input = document.getElementById('i18nMessagesInput');
+        input.value = path;
+        input.dispatchEvent(new Event('input'));
+        input.scrollIntoView({ behavior: 'smooth' });
+    };
 
-        div.appendChild(keyWrapper);
-        div.appendChild(localesWrapper);
-        div.addEventListener('click', () => {
-            const input = document.getElementById('i18nMessagesInput');
-            input.value = path;
-            input.dispatchEvent(new Event('input'));
-            input.scrollIntoView({ behavior: 'smooth' });
-        });
-
-        list.appendChild(div);
-    });
+    for (const { path, missingIn } of missing) {
+        list.append(el('div', {
+                className: 'i18nMissingItem',
+                title: 'Show the existing translations',
+                onClick: () => showTranslations(path),
+            },
+            el('span', { className: 'i18nMissingItem__key' }, path),
+            el('span', { className: 'i18nMissingItem__locales' }, `missing in: ${missingIn.join(', ')}`),
+        ));
+    }
 }
 
 function createTableFromArray(list) {
-    const table = document.createElement('table');
-    table.className = 'internals';
-    const thead = document.createElement('thead');
-    const tbody = document.createElement('tbody');
-
-    thead.innerHTML = '<tr><th>Item</th><th>URL</th></tr>';
-
-    table.appendChild(thead);
-
-    list.forEach(item => {
-        const tr = document.createElement('tr');
-        const tdElement = document.createElement('td');
-        const tdUrl = document.createElement('td');
-        const span = document.createElement('span');
-
+    return createTable(['Item', 'URL'], list.map(item => {
         const name = camelToSnake(item);
-        tdElement.textContent = name;
-        span.textContent = `https://nuxt.com/modules/${name}`;
-        tdUrl.appendChild(span);
 
-        tr.appendChild(tdElement);
-        tr.appendChild(tdUrl);
-
-        tbody.appendChild(tr);
-    });
-
-    table.appendChild(tbody);
-
-    return table;
+        return [name, el('span', {}, `https://nuxt.com/modules/${name}`)];
+    }));
 }
 
 function camelToSnake(str) {
