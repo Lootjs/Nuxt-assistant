@@ -1,4 +1,4 @@
-import { renderCustomCards } from '../cards.js';
+import { renderCards } from '../cards.js';
 import { el } from '../dom.js';
 import { createTree } from '../tree.js';
 
@@ -20,5 +20,5 @@ function createStoreBody({ state, getters, actions }) {
 }
 
 export function renderPinia(stores) {
-    renderCustomCards(stores, document.getElementById('piniaList'), createStoreBody);
+    renderCards(stores, document.getElementById('piniaList'), createStoreBody);
 }

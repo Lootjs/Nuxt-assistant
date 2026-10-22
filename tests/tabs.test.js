@@ -196,9 +196,9 @@ test('internals render modules, hooks and directives', () => {
     renderHooks({ 'app:mounted': 2 });
     renderDirectives({ tooltip: { mounted: 'function' }, empty: {} });
 
-    assert.deepEqual(all('#modulesList .tabbed-card__header').map(el => el.textContent), ['pinia']);
+    assert.deepEqual(all('#modulesList .module-card__header a').map(el => el.textContent), ['pinia']);
     assert.equal(text('#hooksList tbody td:last-child'), '2');
-    assert.deepEqual(all('#directivesList .tabbed-card__header').map(el => el.textContent), ['v-tooltip']);
+    assert.deepEqual(all('#directivesList tbody td:first-child').map(el => el.textContent), ['v-tooltip', 'v-empty']);
 });
 
 test('components and configs render cards', () => {

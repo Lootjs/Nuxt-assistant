@@ -7,6 +7,7 @@ import { createFakePage, installChromeStub } from './helpers/fake-page.js';
 // End-to-end wiring check: the real entry point runs against a fake Nuxt page
 
 const text = selector => document.querySelector(selector).textContent;
+const texts = selector => [...document.querySelectorAll(selector)].map(el => el.textContent);
 const headers = selector => [...document.querySelectorAll(`${selector} .tabbed-card__header`)].map(el => el.textContent);
 
 let chromeStub;
@@ -39,8 +40,8 @@ test('fills every tab from the inspected page', () => {
     assert.equal(text('#messagesTotal'), 'Messages total: 2 (en: 2)');
     assert.equal(text('.route-item--active .route-item__name'), 'claims-id___en');
     assert.deepEqual(headers('#configList'), ['public', 'state']);
-    assert.deepEqual(headers('#modulesList'), ['pinia']);
-    assert.deepEqual(headers('#directivesList'), ['v-tooltip', 'v-focus']);
+    assert.deepEqual(texts('#modulesList .module-card__header a'), ['pinia']);
+    assert.deepEqual(texts('#directivesList tbody td:first-child'), ['v-tooltip', 'v-focus']);
     assert.deepEqual(headers('#piniaList'), ['user']);
     assert.equal(document.querySelectorAll('#hooksList tbody tr').length, 2);
     assert.equal(document.querySelector('.nuxt-not-found').hidden, true);
@@ -51,7 +52,7 @@ test('refresh re-renders without duplicating content', async () => {
     await wait(50);
 
     assert.equal(document.querySelectorAll('#routesList .route-item').length, 2);
-    assert.deepEqual(headers('#modulesList'), ['pinia']);
+    assert.deepEqual(texts('#modulesList .module-card__header a'), ['pinia']);
     assert.equal(document.querySelectorAll('#ssrRequestsList > details').length, 1);
 });
 

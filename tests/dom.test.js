@@ -31,6 +31,6 @@ test('createTable builds headings and rows', () => {
     const table = createTable(['Hook', 'Count'], [['app:mounted', el('span', {}, 2)]]);
 
     assert.equal(table.outerHTML,
-        '<table class="internals"><thead><tr><th>Hook</th><th>Count</th></tr></thead>' +
+        '<table class="data-table"><thead><tr><th>Hook</th><th>Count</th></tr></thead>' +
         '<tbody><tr><td>app:mounted</td><td><span>2</span></td></tr></tbody></table>');
 });

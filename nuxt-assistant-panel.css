@@ -28,14 +28,6 @@ body {
     display: none !important;
 }
 
-ul li ul li span.silent {
-    color: var(--secondary-color);
-}
-
-ul > li span.silent {
-    color: var(--highlight-color);
-}
-
 .layout {
     display: flex;
 }
@@ -100,10 +92,6 @@ ul > li span.silent {
 
 .silent {
     color: var(--secondary-color);
-}
-
-.item-value {
-    word-wrap: break-word;
 }
 
 .flexbox {
@@ -456,11 +444,6 @@ ul > li span.silent {
     border-top: 0;
 }
 
-.tabbed-card__body>ul {
-    margin: 0;
-    padding: 0 1.1428571em;
-}
-
 /* i18n */
 #i18nMessagesList {
     margin-top: 8px;
@@ -674,28 +657,6 @@ div#i18nMessagesList:empty::after {
     color: var(--accent-color);
 }
 
-table.internals {
-    border-radius: 6px;
-    border-collapse: separate;
-    border: 1px solid #334155;
-    border-spacing: 0;
-}
-
-table.internals th,
-table.internals td {
-    border: none;
-    padding: 6px 10px;
-    color: #fff;
-}
-
-table.internals tbody td {
-    background-color: #1e293b;
-}
-
-tbody tr td:nth-child(1) {
-    color: #FFCB6B;
-}
-
 /*components*/
 #componentsList {
     display: flex;
@@ -707,9 +668,9 @@ tbody tr td:nth-child(1) {
     gap: 0.8rem;
 }
 
-#directivesList {
-    display: flex;
-    gap: 10px;
+/* Tables of the Internals tab don't stretch over a wide panel */
+#hooksList, #directivesList {
+    max-width: 40rem;
 }
 /** settings */
 .form-group {
@@ -735,5 +696,100 @@ tbody tr td:nth-child(1) {
 
 #modulesList {
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
+}
+
+/* Views of data with a known shape: components, modules */
+/* Tables of the panel (src/dom.js createTable): no frame or background of their own,
+   so they also fit inside a card */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    padding: 0 12px 4px 0;
+    border-bottom: 1px solid #334155;
+    color: var(--secondary-color);
+    font-weight: 500;
+    text-align: left;
+}
+
+.data-table td {
+    padding: 4px 12px 0 0;
+    vertical-align: top;
+}
+
+.data-table td:first-child {
+    color: #FFCB6B;
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+    padding-right: 0;
+}
+
+.data-table code {
+    font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    color: var(--accent-color);
+}
+
+.component-card__type {
+    color: #C3E88D;
+    white-space: nowrap;
+}
+
+.component-card__required {
+    color: var(--highlight-color);
+}
+
+.component-card__emits {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+.module-card {
+    width: 22rem;
+    padding: 10px 12px;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    background: var(--background-color);
+}
+
+.module-card__header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.module-card__header a {
+    color: #fff;
+    font-weight: 600;
+    text-decoration: none;
+}
+
+.module-card__header a:hover {
+    color: var(--primary-color);
+    text-decoration: underline;
+}
+
+.module-card__description {
+    margin-top: 4px;
+    color: var(--accent-color);
+}
+
+.module-card__stats {
+    display: flex;
+    gap: 8px;
+    margin-top: 6px;
+    color: var(--secondary-color);
+    font-size: 12px;
+}
+
+.module-card__stats a {
+    margin-left: auto;
+    color: var(--primary-color);
 }

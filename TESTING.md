@@ -31,13 +31,18 @@ Automated tests use a fake Nuxt app, so check the real extension before publishi
      highlighted. Clicking a counter opens its tab.
    - **Routes**: the current route is highlighted with the `active` badge; the search filters by path, name
      or meta and the subtitle shows "Routes: N of M"; the query stays applied after "Refresh data".
-   - **SSR Data**: requests with sizes, failed ones first, big arrays are truncated to the threshold from
-     Settings. "Copy JSON" copies the full response (paste it somewhere to check) and doesn't toggle the request;
-     "Expand all" / "Collapse all" work.
-   - **Configs**: runtime config and state cards, empty strings are shown as `""`.
+   - **SSR Data**: requests with sizes, failed ones first. Responses are trees: collapsed nodes show a preview,
+     big lists show the number of items from Settings and a "Show more" button. "Copy JSON" copies the full
+     response (paste it somewhere to check) and doesn't toggle the request; "Expand all" / "Collapse all"
+     toggle the requests only.
+   - **Configs**: runtime config and state cards with trees, the first level expanded.
    - **i18n**: locales, missing translations (clicking a key searches for it), case-insensitive search,
      Arabic values with digits or Latin words are displayed in the right order.
-   - **Pinia**, **Internals** (modules, directives, hooks), **Components**.
+   - **Pinia**: every store has state, getters (if any) and actions; nested state can be expanded.
+     Check a big real store: it loads and the panel stays responsive.
+   - **Internals**: module cards (the name opens nuxt.com, "docs" opens the module site in a new tab),
+     directives and hooks tables with headings.
+   - **Components**: a props table per component with types, "required" and defaults; emits if any.
 3. Press the refresh button in the header a few times: it spins while loading, nothing disappears or
    gets duplicated.
 4. Reload the page and navigate to another page of the site: the panel updates.

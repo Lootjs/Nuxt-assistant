@@ -32,7 +32,7 @@ export function el(tag, props = {}, ...children) {
 }
 
 export function createTable(headings, rows) {
-    return el('table', { className: 'internals' },
+    return el('table', { className: 'data-table' },
         el('thead', {}, el('tr', {}, headings.map(heading => el('th', {}, heading)))),
         el('tbody', {}, rows.map(cells => el('tr', {}, cells.map(cell => el('td', {}, cell))))),
     );

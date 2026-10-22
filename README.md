@@ -13,22 +13,24 @@
     - All routes with their meta, with case-insensitive search by path, name or meta.
     - The current route is highlighted, dynamic routes (`/users/:id`) included.
 - **SSR Data**:
-    - All requests made during server-side rendering, with their responses.
+    - All requests made during server-side rendering, with their responses as a collapsible tree.
     - Response sizes, with large ones highlighted, and the total payload data size.
     - Failed requests first, with their error message and status code.
     - Copy any response as JSON in full, expand or collapse all requests at once.
-- **Configs**: Public runtime config, app config and the State.
+- **Configs**: Public runtime config, app config and the State, as collapsible trees.
 - **i18n**:
     - Current, default and browser locales.
     - All translations with case-insensitive search, including messages with placeholders, plurals and linked messages.
       Right-to-left translations (Arabic, Hebrew) are displayed correctly.
     - Missing translations: keys present in one locale but absent in another.
-- **Pinia**: Stores with their primitive state and getters values, and their actions.
+- **Pinia**: Stores with their state and getters as collapsible trees, and their actions.
 - **Internals**:
-    - Installed Nuxt modules with their info from the Nuxt modules catalog.
+    - Installed Nuxt modules from the Nuxt modules catalog: description, category, latest version, stars,
+      downloads, supported Nuxt versions, links to nuxt.com and the docs.
     - Directives and their hooks.
     - Hooks with the number of listeners.
-- **Components**: Globally registered components with their props.
+- **Components**: Globally registered components with a table of their props (type, required, default)
+  and their emits.
 
 ## Development
 

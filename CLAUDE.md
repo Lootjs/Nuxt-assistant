@@ -24,6 +24,7 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
 - `src/tabs/*.js`: one module per panel tab, they receive data as arguments and render it.
   `tabs/overview.js` gets all sections and computes every Overview card; other tabs don't touch it.
 - `src/badges.js`: counters next to the tab names, computed from the snapshot like the Overview.
+- `src/tree.js`: `createTree()`, a collapsible JSON tree with previews, lazy rendering and paging.
 - `src/dom.js` (`el`, `createTable`, `setText`), `src/cards.js`, `src/format.js`, `src/i18n/`, `src/modules-api.js`,
   `src/settings.js`, `src/navigation.js` (tabs and their badges), `src/clipboard.js`.
 - Extension entry files stay in the repo root on purpose; don't move them into `src/`.
@@ -55,14 +56,18 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
 - Overview and i18n cards are generated from lists in `tabs/overview.js` / `tabs/i18n.js` with
   `createWidget()` (`src/widgets.js`); a card with `tab` opens that tab on click. Set values by id with
   `setText()`, flag cards with `setFlag()`. Tests that render these cards call `setupOverview()` / `setupI18n()` first.
-- Build DOM with `el()`: string children become text nodes, so page data can't inject HTML.
+- Build DOM with `el()`: string children become text nodes, so page data can't inject HTML. No `innerHTML` anywhere.
+- Data of unknown shape (SSR responses, configs, Pinia state) is shown with `createTree()`; data with a known
+  shape gets its own view (props table for components, cards for modules, `createTable()` for directives
+  and hooks). Tables share the plain `data-table` style, they also fit inside cards.
+- Links from external data (e.g. module websites from api.nuxt.com) must be checked to be http(s) before
+  they become an `href`. The tree renders nested values on expand and
+  pages long lists by `settings.responseThreshold`, so don't pre-render or pre-truncate data for it.
 - Copy to the clipboard with `copyText()`: the Clipboard API is usually blocked in DevTools panels, it falls
   back to `execCommand('copy')`.
-- Render helpers must not mutate the snapshot data (`normalizeResponse` returns new objects): "Copy JSON"
-  copies the original response.
+- Render helpers must not mutate the snapshot data: "Copy JSON" copies the original response.
 - Text from the page may be right-to-left: put `dir: 'auto'` on elements showing translations or other user text.
 - The panel is dense on purpose (13px base font, small paddings) to match DevTools; keep new UI compact.
-  `innerHTML` is only used for `jsonSyntaxHighlight()` output, which escapes its input.
 - Data from the inspected page is untrusted (payload, error messages, i18n strings).
 - `runtime.sendMessage` reaches every open panel: compare `message.tabId` with
   `chrome.devtools.inspectedWindow.tabId`.
@@ -80,7 +85,8 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
 ## Conventions
 
 - Match the surrounding style: 4-space indent, single quotes, comments explain why, not what.
-- Tests: pure logic gets unit tests; tab rendering goes to `tests/tabs.test.js`; section statuses to
+- Tests: pure logic gets unit tests; tab rendering goes to `tests/tabs.test.js` (bigger tabs have their own
+  files: `components.test.js`, `internals.test.js`, `tree.test.js`); section statuses to
   `tests/snapshot.test.js`; wiring to `tests/panel.test.js`. The fake Nuxt app lives in
   `tests/helpers/fake-page.js`; break it for a test with `createFakePage({ patch: () => { ... } })`.
 - Commit messages: `[v<manifest version>] feat|fix: description`, e.g. `[v1.24] fix: ...`.
@@ -91,5 +97,4 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
 Ideas postponed during the refactoring, not started:
 
 - Refresh on client-side (SPA) navigation: now only full page loads trigger a refresh.
-- Pinia: show object state with a depth limit (like `normalizeResponse`) instead of `{}`.
 - Routes search by a concrete URL (`/en/claims/123` → `/en/claims/:id`), e.g. with `router.resolve()` in the page.
