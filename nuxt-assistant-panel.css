@@ -63,6 +63,8 @@ ul > li span.silent {
 
 .main {
     flex: 1;
+    /* Without it the widest content stretches the column beyond the viewport, where it gets clipped */
+    min-width: 0;
 }
 
 .silent {
@@ -471,6 +473,10 @@ div#i18nMessagesList:empty::after {
     margin: 25px 0 0;
 }
 
+.i18nItem {
+    overflow-wrap: anywhere;
+}
+
 .i18nItem span {
     cursor: pointer;
 }
@@ -495,6 +501,30 @@ div#i18nMessagesList:empty::after {
 }
 
 .i18nItem span:hover {
+    color: var(--highlight-color);
+}
+
+#i18nMissingList {
+    max-height: 300px;
+    overflow-y: auto;
+    line-height: 24px;
+}
+
+.i18nMissingItem {
+    cursor: pointer;
+    overflow-wrap: anywhere;
+}
+
+.i18nMissingItem__key {
+    color: var(--primary-color);
+}
+
+.i18nMissingItem__locales {
+    margin-left: 8px;
+    color: var(--highlight-color);
+}
+
+.i18nMissingItem:hover .i18nMissingItem__key {
     color: var(--highlight-color);
 }
 

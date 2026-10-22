@@ -2,6 +2,7 @@
 <!DOCTYPE html>
 <html>
 <head>
+    <meta charset="utf-8">
     <title>My DevTools Panel</title>
     <link rel="stylesheet" href="nuxt-assistant-panel.css">
 </head>
@@ -280,6 +281,18 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="divider--margined"></div>
+                <div class="section-head">
+                    <div class="section-head__label">
+                        <img src="./images/icon-i18n.svg" alt=""/>
+                    </div>
+                    <div class="section-head__body">
+                        <div class="section-head__title">Missing translations</div>
+                        <div class="section-head__subtitle" id="missingTotal"></div>
+                    </div>
+                </div>
+                <div id="i18nMissingList"></div>
 
                 <div class="divider--margined"></div>
                 <div class="section-head">

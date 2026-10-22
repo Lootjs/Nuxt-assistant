@@ -40,7 +40,7 @@ const extractI18n = `
         localesProps: window.useNuxtApp().$i18n.localeProperties.value,
         messages: window.useNuxtApp().$i18n.messages.value,
         getBrowserLocale: window.useNuxtApp().$i18n.getBrowserLocale()
-    }) : null
+    }, (key, value) => typeof value === 'function' ? '[compiled function]' : value) : null
 `
 
 const extractBuildId = `
@@ -66,29 +66,34 @@ const extractDirectives = `
     )
 `
 
+// Evals run in the page's global scope, so declarations are kept inside an IIFE:
+// a top-level const would throw "already been declared" on the next run
 const extractComponents = `
-    const nativeTypes = [String, Number, Boolean, Array, Object, Date, Function, Symbol, BigInt, Promise];
+    (() => {
+        const nativeTypes = [String, Number, Boolean, Array, Object, Date, Function, Symbol, BigInt, Promise];
 
-    function recurseReplaceFunction(item) {
-        if (nativeTypes.includes(item)) {
-            return item.name;
-        } else if (Array.isArray(item) && item.length && item.every(element => nativeTypes.includes(element))) {
-            return item.map(element => element.name).join(' | ');
-        } else if (Array.isArray(item)) {
-            return item.map(element => recurseReplaceFunction(element));
-        } else if (typeof item === 'object' && item !== null) {
-            const newItem = {};
-            for (const key in item) {
-                newItem[key] = recurseReplaceFunction(item[key]);
+        function recurseReplaceFunction(item) {
+            if (nativeTypes.includes(item)) {
+                return item.name;
+            } else if (Array.isArray(item) && item.length && item.every(element => nativeTypes.includes(element))) {
+                return item.map(element => element.name).join(' | ');
+            } else if (Array.isArray(item)) {
+                return item.map(element => recurseReplaceFunction(element));
+            } else if (typeof item === 'object' && item !== null) {
+                const newItem = {};
+                for (const key in item) {
+                    newItem[key] = recurseReplaceFunction(item[key]);
+                }
+                return newItem;
+            } else if (typeof item === 'function') {
+                return 'Function' + ('name' in item ? '<' + item.name + '>' : item);
+            } else {
+                return item;
             }
-            return newItem;
-        } else if (typeof item === 'function') {
-            return 'Function' + ('name' in item ? '<' + item.name + '>' : item);
-        } else {
-            return item;
         }
-    }
-    recurseReplaceFunction(Object.values(window.useNuxtApp().vueApp._context.components));
+
+        return recurseReplaceFunction(Object.values(window.useNuxtApp().vueApp._context.components));
+    })()
     `
 
 const extractPinia = `
@@ -151,10 +156,11 @@ document.querySelectorAll('#common [data-tab]').forEach(widget => {
 
 document.getElementById('i18nMessagesInput').addEventListener('input', e => {
     let messages = fetchedMessages;
+    const query = e.target.value.toLowerCase();
 
-    if (e.target.value.length > 0) {
+    if (query.length > 0) {
         messages = messages.filter(({ key, value }) => {
-            return key.indexOf(e.target.value) !== -1 || value.indexOf(e.target.value) !== -1
+            return key.toLowerCase().includes(query) || value.toLowerCase().includes(query)
         })
     }
 
@@ -181,14 +187,13 @@ function runAssistant() {
     const runId = ++currentRunId;
     document.querySelector(".header__title").textContent = 'Fetching..';
     setTimeout(() => document.querySelector(".header__title").textContent = 'Nuxt Assistant', 300)
-    const i18nMessagesList = document.getElementById("i18nMessagesList")
     document.querySelectorAll('#i18n-included img, #pinia-included img')
         .forEach(el => el.style.display = 'none')
 
     chrome.devtools.inspectedWindow.eval(extractBuildId, (result, isException) => {
         const buildIdContainer = document.getElementById('buildId');
         if (isException) {
-            console.warn('Cannot load buildId');
+            logEvalFailure('Cannot load buildId', isException);
             buildIdContainer.textContent = 'N/A';
 
             return void (0);
@@ -252,7 +257,7 @@ function runAssistant() {
                 state: flags.state
             }, configList);
         } else {
-            console.warn("Error accessing useNuxtApp()");
+            logEvalFailure('Error accessing useNuxtApp()', isException);
             nuxtNotFound();
         }
     });
@@ -265,7 +270,7 @@ function runAssistant() {
             routesList.innerText = '';
             result.forEach(el => renderRouteItem(el, routesList))
         } else {
-            console.warn("Error accessing useNuxtApp()");
+            logEvalFailure('Cannot load routes', isException);
         }
     });
 
@@ -280,21 +285,36 @@ function runAssistant() {
             } = JSON.parse(result);
             fetchedMessages = flattenI18n(messages);
 
+            document.querySelector('[data-id=i18n]').style.display = '';
             document.getElementById('currentLocale').textContent = activeLocale
             document.getElementById('defaultLocale').textContent = defaultLocale
             document.getElementById('browserLocale').textContent = getBrowserLocale
             document.getElementById("i18nLocalesList").textContent = `Available locales: ${locales.join(', ')}`;
-            document.getElementById('messagesTotal').textContent = `Messages total: ${fetchedMessages.length}`;
-            renderI18nList(fetchedMessages, i18nMessagesList)
+
+            const countByLocale = {};
+            fetchedMessages.forEach(({ locale }) => {
+                countByLocale[locale] = (countByLocale[locale] || 0) + 1;
+            });
+            const localeCounts = Object.entries(countByLocale)
+                .map(([locale, count]) => `${locale}: ${count}`)
+                .join(', ');
+            document.getElementById('messagesTotal').textContent =
+                `Messages total: ${fetchedMessages.length}${localeCounts ? ` (${localeCounts})` : ''}`;
+
+            renderMissingTranslations(fetchedMessages, locales);
+            document.getElementById('i18nMessagesInput').dispatchEvent(new Event('input'));
         } else {
             document.querySelector('[data-id=i18n]').style.display = 'none';
-            console.warn("Error accessing useNuxtApp()");
+            // Without an exception the app simply has no i18n installed
+            if (isException) {
+                logEvalFailure('Cannot load i18n', isException);
+            }
         }
     });
 
     chrome.devtools.inspectedWindow.eval(extractInternals, async (result, isException) => {
         if (isException) {
-            console.warn('Cannot load internal info');
+            logEvalFailure('Cannot load internal info', isException);
 
             return void(0);
         }
@@ -354,7 +374,7 @@ function runAssistant() {
 
     chrome.devtools.inspectedWindow.eval(extractDirectives, (result, isException) => {
         if (isException) {
-            console.warn('Cannot load directives');
+            logEvalFailure('Cannot load directives', isException);
 
             return void(0);
         }
@@ -370,7 +390,7 @@ function runAssistant() {
 
     chrome.devtools.inspectedWindow.eval(extractComponents, (result, isException) => {
         if (isException) {
-            console.warn('Cannot load components');
+            logEvalFailure('Cannot load components', isException);
 
             return void(0);
         }
@@ -389,7 +409,7 @@ function runAssistant() {
 
     chrome.devtools.inspectedWindow.eval(extractPinia, (result, isException) => {
         if (isException) {
-            console.warn('Cannot load pinia');
+            logEvalFailure('Cannot load pinia', isException);
 
             return void(0);
         }
@@ -444,6 +464,12 @@ async function fetchModuleInfo(moduleName) {
         // Network errors aren't cached, so the module is retried on the next run
         return null;
     }
+}
+
+// Failed evals are expected (pages without Nuxt, apps without i18n or pinia), so they're logged
+// with console.debug: console.warn would flood the extension's error page in chrome://extensions
+function logEvalFailure(message, exceptionInfo) {
+    console.debug(`[Nuxt Assistant] ${message}`, exceptionInfo && (exceptionInfo.description || exceptionInfo.value) || '');
 }
 
 function openTab(evt, tabName) {
@@ -703,32 +729,158 @@ function renderI18nList(data, parentElement) {
 }
 
 // i18n tab
+
+// Node types of the vue-i18n message compiler AST
+const I18N_NODE = {
+    RESOURCE: 0,
+    PLURAL: 1,
+    MESSAGE: 2,
+    TEXT: 3,
+    NAMED: 4,
+    LIST: 5,
+    LINKED: 6,
+    LINKED_KEY: 7,
+    LINKED_MODIFIER: 8,
+    LITERAL: 9,
+};
+
+// Precompiled messages are ASTs, in production their props are minified (type -> t, body -> b, ...)
+function isI18nAstNode(value) {
+    return typeof value === 'object' && value !== null && (
+        (typeof value.type === 'number' && 'body' in value) ||
+        (typeof value.t === 'number' && 'b' in value)
+    );
+}
+
+// Restores the message source, e.g. "Hello {name} | Hello all" or "@.lower:common.title"
+function i18nAstToString(node) {
+    if (node === null || typeof node !== 'object') {
+        return node === null || node === undefined ? '' : String(node);
+    }
+
+    const prop = (name, shortName) => node[name] !== undefined ? node[name] : node[shortName];
+
+    switch (prop('type', 't')) {
+        case I18N_NODE.RESOURCE:
+            return i18nAstToString(prop('body', 'b'));
+        case I18N_NODE.PLURAL:
+            return (prop('cases', 'c') || []).map(i18nAstToString).join(' | ');
+        case I18N_NODE.MESSAGE: {
+            const staticValue = prop('static', 's');
+            if (staticValue !== undefined) {
+                return staticValue;
+            }
+
+            return (prop('items', 'i') || []).map(i18nAstToString).join('');
+        }
+        case I18N_NODE.TEXT:
+        case I18N_NODE.LINKED_KEY:
+        case I18N_NODE.LINKED_MODIFIER:
+            return i18nAstToString(prop('value', 'v'));
+        case I18N_NODE.NAMED:
+            return `{${prop('key', 'k')}}`;
+        case I18N_NODE.LIST:
+            return `{${prop('index', 'i')}}`;
+        case I18N_NODE.LITERAL:
+            return `{'${prop('value', 'v')}'}`;
+        case I18N_NODE.LINKED: {
+            const modifier = prop('modifier', 'm');
+
+            return `@${modifier ? '.' + i18nAstToString(modifier) : ''}:${i18nAstToString(prop('key', 'k'))}`;
+        }
+        default:
+            return '';
+    }
+}
+
 function flattenI18n(data) {
-    let output = [];
-    for (const locale in data) {
-        function recurse(obj, current) {
-            for (const key in obj) {
-                let newKey = current ? `${current}.${key}` : key;
-                if (obj[key] && typeof obj[key] === 'object' && (!obj[key].hasOwnProperty('t') && !obj[key].end)) {
-                    recurse(obj[key], newKey);
-                } else if (obj[key].hasOwnProperty('t')) {
-                    const body = obj[key].body ? 'body' : 'b'
-                    const staticKey = obj[key][body].static ? 'static' : 's'
-                    output.push({
-                        key: `${locale}.${newKey}`,
-                        value: obj[key][body][staticKey] || ''
-                    });
-                } else if (obj[key] && typeof obj[key] === 'string') {
-                    output.push({
-                        key: `${locale}.${newKey}`,
-                        value: obj[key] || ''
-                    });
-                }
+    const output = [];
+
+    function recurse(locale, obj, current) {
+        for (const key in obj) {
+            const value = obj[key];
+            const path = current ? `${current}.${key}` : key;
+
+            if (value === null || value === undefined) {
+                continue;
+            }
+
+            if (isI18nAstNode(value)) {
+                output.push({ locale, path, key: `${locale}.${path}`, value: i18nAstToString(value) });
+            } else if (typeof value === 'object') {
+                recurse(locale, value, path);
+            } else {
+                output.push({ locale, path, key: `${locale}.${path}`, value: String(value) });
             }
         }
-        recurse(data[locale], '');
     }
+
+    for (const locale in data) {
+        recurse(locale, data[locale], '');
+    }
+
     return output;
+}
+
+// Locales loaded lazily have no messages until the user switches to them, so they can't be compared
+function findMissingTranslations(messages) {
+    const keysByLocale = {};
+    messages.forEach(({ locale, path }) => {
+        (keysByLocale[locale] = keysByLocale[locale] || new Set()).add(path);
+    });
+    const loadedLocales = Object.keys(keysByLocale);
+    const allPaths = [...new Set(messages.map(({ path }) => path))].sort();
+
+    const missing = allPaths
+        .map(path => ({ path, missingIn: loadedLocales.filter(locale => !keysByLocale[locale].has(path)) }))
+        .filter(({ missingIn }) => missingIn.length > 0);
+
+    return { loadedLocales, missing };
+}
+
+function renderMissingTranslations(messages, locales) {
+    const { loadedLocales, missing } = findMissingTranslations(messages);
+    const notLoadedLocales = locales.filter(locale => !loadedLocales.includes(locale));
+    const subtitle = document.getElementById('missingTotal');
+    const list = document.getElementById('i18nMissingList');
+    list.innerText = '';
+
+    const notLoadedNote = notLoadedLocales.length
+        ? `. Not loaded yet (lazy loading): ${notLoadedLocales.join(', ')}`
+        : '';
+
+    if (loadedLocales.length < 2) {
+        subtitle.textContent = `At least two loaded locales are needed to compare${notLoadedNote}`;
+
+        return void(0);
+    }
+
+    subtitle.textContent = missing.length
+        ? `${missing.length} keys are missing in some of the loaded locales${notLoadedNote}`
+        : `All keys are translated in ${loadedLocales.join(', ')}${notLoadedNote}`;
+
+    missing.forEach(({ path, missingIn }) => {
+        const div = document.createElement("div");
+        div.className = 'i18nMissingItem';
+        div.title = 'Show the existing translations';
+        const keyWrapper = document.createElement("span");
+        keyWrapper.className = 'i18nMissingItem__key';
+        keyWrapper.textContent = path;
+        const localesWrapper = document.createElement("span");
+        localesWrapper.className = 'i18nMissingItem__locales';
+        localesWrapper.textContent = `missing in: ${missingIn.join(', ')}`;
+
+        div.appendChild(keyWrapper);
+        div.appendChild(localesWrapper);
+        div.addEventListener('click', () => {
+            const input = document.getElementById('i18nMessagesInput');
+            input.value = path;
+            input.dispatchEvent(new Event('input'));
+            input.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        list.appendChild(div);
+    });
 }
 
 function createTableFromArray(list) {
