@@ -77,7 +77,12 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
   back to `execCommand('copy')`.
 - Render helpers must not mutate the snapshot data: "Copy JSON" copies the original response.
 - Text from the page may be right-to-left: put `dir: 'auto'` on elements showing translations or other user text.
-- The panel is dense on purpose (13px base font, small paddings) to match DevTools; keep new UI compact.
+- The panel is dense on purpose (14px base font, 12px minimum for small labels, small paddings) to fit
+  DevTools; keep new UI compact.
+- CSS: colors, fonts and the base size are variables in `:root` of `nuxt-assistant-panel.css`, use them instead of
+  literals; the font is set on `body` and inherited by `body *` (no `* { font-size }`, it breaks inheritance). The file is split into sections
+  (variables, base, layout, shared components, one per tab): add rules to their section. Containers of cards
+  get the `card-list` class.
 - Data from the inspected page is untrusted (payload, error messages, i18n strings).
 - `runtime.sendMessage` reaches every open panel: compare `message.tabId` with
   `chrome.devtools.inspectedWindow.tabId`.

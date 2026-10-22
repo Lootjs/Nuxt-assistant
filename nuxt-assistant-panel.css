@@ -1,32 +1,85 @@
+/* ==========================================================================
+   Variables
+   ========================================================================== */
+
 :root {
     --primary-color: #00dc82;
+    --primary-hover-color: #16c37e;
     --secondary-color: #818fa4;
     --accent-color: #cbd5e1;
     --highlight-color: #f7b063;
+    --text-color: #fff;
+    --muted-text-color: #aeb1c3;
+    --subtitle-color: #909eb2;
+
+    --page-background-color: #020420;
     --background-color: #1e293b;
+    --border-color: #334155;
+    --error-color: #bb1616;
+    --warning-background-color: #4a2f12;
+    --active-background-color: #004954;
+
+    /* JSON highlighting, also used by tables to match it */
+    --syntax-key-color: #f07178;
+    --syntax-string-color: #c3e88d;
+    --syntax-number-color: #babed8;
+    --syntax-keyword-color: #ffcb6b;
+
+    /* Readable, yet dense enough to fit the DevTools; small labels are 12px at least */
+    --font-size: 14px;
+    --font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --font-mono: Menlo, Consolas, "DejaVu Sans Mono", monospace;
+
+    /* Tints for single-color SVG icons used as <img> */
     --svg-primary-color: invert(75%) sepia(47%) saturate(3985%) hue-rotate(105deg) brightness(94%) contrast(102%);
     --svg-secondary-color: invert(61%) sepia(7%) saturate(905%) hue-rotate(177deg) brightness(91%) contrast(91%);
 }
 
-/* Close to the DevTools own font size, so the panel doesn't look oversized next to other panels */
-* {
-    font-size: 13px;
-}
+/* ==========================================================================
+   Base
+   ========================================================================== */
 
 html {
-    background-color: #020420;
-    padding: 0;
+    font-size: var(--font-size);
+    background-color: var(--page-background-color);
     overflow-x: hidden;
 }
 
+/* DevTools may apply its own font styles to extension panels: the panel's font is set on body, and every
+   element inside inherits it ("body *" wins over any "*" rule), unless a class sets its own size or font.
+   This also makes form controls and <code> inherit the font. */
 body {
     margin: 0;
+    font-family: var(--font-family);
+    font-size: var(--font-size);
+}
+
+body * {
+    font-family: inherit;
+    font-size: inherit;
 }
 
 /* Visibility is toggled with the hidden attribute; classes with display: flex would override it otherwise */
 [hidden] {
     display: none !important;
 }
+
+:focus-visible {
+    outline: 2px solid var(--primary-color);
+    outline-offset: 1px;
+}
+
+.silent {
+    color: var(--secondary-color);
+}
+
+.divider--margined {
+    margin: 12px 0;
+}
+
+/* ==========================================================================
+   Layout: sidebar and tabs
+   ========================================================================== */
 
 .layout {
     display: flex;
@@ -37,13 +90,19 @@ body {
     min-height: 100vh;
 }
 
+.main {
+    flex: 1;
+    /* Without it the widest content stretches the column beyond the viewport, where it gets clipped */
+    min-width: 0;
+}
+
 .header {
     display: flex;
-    color: #fff;
-    gap: 8px;
     align-items: center;
-    padding: 0 0 12px 12px;
+    gap: 8px;
     margin-top: 12px;
+    padding: 0 0 12px 12px;
+    color: var(--text-color);
     user-select: none;
 }
 
@@ -67,7 +126,7 @@ body {
     overflow: hidden;
     background: var(--background-color);
     color: var(--secondary-color);
-    font-size: 10px;
+    font-size: 11px;
     line-height: 16px;
     white-space: nowrap;
 }
@@ -89,8 +148,8 @@ body {
 }
 
 .refresh-button:hover {
-    color: var(--primary-color);
     background: var(--background-color);
+    color: var(--primary-color);
 }
 
 .refresh-button svg {
@@ -102,63 +161,52 @@ body {
     animation: spin 0.8s linear infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+    .refresh-button.is-loading svg {
+        animation-duration: 3s;
+    }
+}
+
 @keyframes spin {
     to {
         transform: rotate(360deg);
     }
 }
 
-.main {
-    flex: 1;
-    /* Without it the widest content stretches the column beyond the viewport, where it gets clipped */
-    min-width: 0;
-}
-
-.silent {
-    color: var(--secondary-color);
-}
-
-.flexbox {
-    display: flex;
-}
-
-.tabcontent {
-    display: none;
-    padding: 0 16px;
-    color: #fff;
-    flex-basis: 85%;
-    flex-direction: column;
-    margin-top: 10px;
-}
-
-.tabcontent.active {
-    display: flex;
-}
-
 .tabs {
     display: flex;
     flex-direction: column;
-    flex-basis: 8%;
     padding: 0 12px;
 }
 
 .tablinks, .supportlink {
-    background-color: #020420;
-    color: var(--secondary-color);
-    padding: 6px 12px;
-    border: 0;
-    cursor: pointer;
-    font-weight: 600;
-    text-align: left;
     display: flex;
     align-items: center;
     gap: 8px;
-    transition: color 0.3s ease;
+    padding: 6px 12px;
     border-left: 1px solid var(--secondary-color);
+    color: var(--secondary-color);
+    font-weight: 600;
+    cursor: pointer;
+    transition: color 0.3s ease;
+}
+
+.tablinks:hover {
+    border-left-color: var(--text-color);
+    color: var(--text-color);
+}
+
+.tablinks.active {
+    border-left-color: var(--primary-color);
+    color: var(--primary-color);
 }
 
 .tablinks[data-id=settings] {
     border-top: 1px dashed var(--secondary-color);
+}
+
+.supportlink {
+    color: var(--primary-color);
 }
 
 /* Counters next to the tab names */
@@ -168,72 +216,320 @@ body {
     border-radius: 8px;
     background: var(--background-color);
     color: var(--secondary-color);
-    font-size: 11px;
+    font-size: 12px;
     font-weight: 500;
-    line-height: 16px;
+    line-height: 18px;
 }
 
 .tablinks__badge--warning {
-    background: #4a2f12;
+    background: var(--warning-background-color);
     color: var(--highlight-color);
 }
 
-.supportlink {
-    color: var(--primary-color);
-}
-
-.tablinks.active {
-    color: var(--primary-color);
-    border-left: 1px solid var(--primary-color);
-}
-
-.tablinks:hover {
-    color: #fff;
-    border-left: 1px solid #fff;
-}
-
-.divider--margined {
-    margin: 12px 0;
-}
-
-/* overview tab */
-
-.widgets {
+.tabcontent {
+    display: none;
+    flex-direction: column;
     margin-top: 10px;
+    padding: 0 16px;
+    color: var(--text-color);
+}
+
+.tabcontent.active {
+    display: flex;
+}
+
+/* ==========================================================================
+   Shared components
+   ========================================================================== */
+
+.section-head {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 8px;
+}
+
+.section-head__label {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.section-head__label img {
+    width: 28px;
+    height: 28px;
+    filter: var(--svg-secondary-color);
+}
+
+.section-head__title {
+    color: var(--text-color);
+    font-size: 20px;
+    font-weight: 600;
+}
+
+.section-head__subtitle {
+    color: var(--subtitle-color);
+    font-size: 13px;
+}
+
+/* Containers of cards: Configs, Pinia, Components, Modules */
+.card-list {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
 }
 
-.widget {
-    flex: 1;
-    max-width: 160px;
-    border: 2px solid var(--secondary-color);
-    border-radius: 10px;
-    padding: 12px 8px;
-    display: flex;
-    justify-content: center;
-    flex-direction: column;
-    align-items: center;
-    transition: border 0.3s ease;
+.tabbed-card {
+    max-width: 30rem;
 }
 
-.widget:hover, .widget:hover .widget__meta {
+.tabbed-card__header {
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 6px 6px 0 0;
+    color: var(--text-color);
+    font-weight: 500;
+}
+
+.tabbed-card__body {
+    padding: 10px 12px;
+    border: 1px solid var(--border-color);
+    border-top: 0;
+    border-radius: 0 0 6px 6px;
+    background: var(--background-color);
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.chip {
+    padding: 0 6px;
+    border-radius: 4px;
+    background: var(--page-background-color);
+    color: var(--accent-color);
+    font-size: 12px;
+    line-height: 20px;
+}
+
+/* Small secondary buttons, e.g. "Expand all" or "Copy JSON" */
+.toolbar {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.button {
+    padding: 2px 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--accent-color);
+    font-size: 13px;
+    cursor: pointer;
+}
+
+.button:hover {
+    border-color: var(--primary-color);
+    color: var(--primary-color);
+}
+
+/* Search fields of the Routes and i18n tabs */
+.search-input {
+    width: 300px;
+    padding: 6px 8px;
+    border: 0;
+    border-radius: 5px;
+}
+
+.search-input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* Tables of the panel (src/dom.js createTable): no frame or background of their own,
+   so they also fit inside a card */
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table th {
+    padding: 0 12px 4px 0;
+    border-bottom: 1px solid var(--border-color);
+    color: var(--secondary-color);
+    font-weight: 500;
+    text-align: left;
+}
+
+.data-table td {
+    padding: 4px 12px 0 0;
+    vertical-align: top;
+}
+
+.data-table td:first-child {
+    color: var(--syntax-keyword-color);
+}
+
+.data-table th:last-child,
+.data-table td:last-child {
+    padding-right: 0;
+}
+
+.data-table code {
+    color: var(--accent-color);
+    font-family: var(--font-mono);
+}
+
+/* JSON highlighting */
+.json__key { color: var(--syntax-key-color); }
+.json__string { color: var(--syntax-string-color); }
+.json__number { color: var(--syntax-number-color); }
+.json__boolean { color: var(--syntax-keyword-color); }
+.json__null { color: var(--syntax-keyword-color); }
+
+/* JSON tree for data of unknown shape: SSR Data, Configs, Pinia (src/tree.js) */
+.tree {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 20px;
+    white-space: normal;
+}
+
+.tree__children {
+    margin-left: 5px;
+    padding-left: 12px;
+    border-left: 1px solid var(--border-color);
+}
+
+.tree > .tree__children {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+}
+
+.tree__row {
+    padding-left: 14px;
+    overflow-wrap: anywhere;
+}
+
+.tree__node > summary {
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: pointer;
+}
+
+.tree__node > summary:hover .json__key {
+    text-decoration: underline;
+}
+
+.tree__node[open] > summary .tree__preview {
+    opacity: 0.6;
+}
+
+.tree__preview {
+    color: var(--secondary-color);
+}
+
+.tree__more {
+    margin: 4px 0 4px 14px;
+    font-family: var(--font-family);
+}
+
+/* Titled parts of a card, e.g. state / getters / actions of a Pinia store */
+.tree-section + .tree-section {
+    margin-top: 8px;
+}
+
+.tree-section__title {
+    margin-bottom: 2px;
+    color: var(--highlight-color);
+    font-weight: 500;
+}
+
+/* A section whose data couldn't be loaded from the page */
+.load-error {
+    margin: 8px 0;
+    padding: 8px 12px;
+    border-left: 3px solid var(--error-color);
+    border-radius: 4px;
+    background: var(--background-color);
+    color: var(--accent-color);
+    overflow-wrap: anywhere;
+}
+
+/* Temporary textarea used to copy text when the Clipboard API is blocked, see src/clipboard.js */
+.clipboard-buffer {
+    position: fixed;
+    top: 0;
+    left: -9999px;
+    opacity: 0;
+}
+
+.nuxt-not-found {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    width: 100%;
+    height: 100%;
+    padding-top: 30px;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    font-size: 2rem;
+    text-align: center;
+    cursor: pointer;
+}
+
+.nuxt-not-found:hover {
+    color: var(--accent-color);
+    text-decoration: underline;
+}
+
+/* ==========================================================================
+   Overview tab
+   ========================================================================== */
+
+.widgets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.widget {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    max-width: 160px;
+    padding: 12px 8px;
+    border: 2px solid var(--secondary-color);
+    border-radius: 10px;
+    transition: border-color 0.3s ease;
+}
+
+/* Only cards that open a tab react to the pointer */
+.widget--link {
+    cursor: pointer;
+}
+
+.widget--link:hover,
+.widget--link:hover .widget__meta {
     border-color: var(--primary-color);
     color: var(--primary-color);
 }
 
 .widget--covered img {
-    filter: invert(75%) sepia(47%) saturate(3985%) hue-rotate(105deg) brightness(94%) contrast(102%);
+    filter: var(--svg-primary-color);
 }
 
 .widget__highlight {
     font-size: 22px;
     font-weight: 500;
-}
-
-.widget--link {
-    cursor: pointer;
 }
 
 .widget__highlight img {
@@ -243,30 +539,33 @@ body {
 
 .widget__meta {
     display: flex;
+    align-items: center;
     gap: 5px;
     margin-top: 6px;
     color: var(--accent-color);
 }
 
-.widget__cover, .widget__meta {
+.widget__cover {
     display: flex;
     align-items: center;
-}
-
-.widget__name {
-    font-weight: 500;
 }
 
 .widget__cover img {
     width: 16px;
 }
 
-/* Routes tab */
+.widget__name {
+    font-weight: 500;
+}
+
+/* ==========================================================================
+   Routes tab
+   ========================================================================== */
 
 .routes {
-    max-width: 65rem;
     display: flex;
     flex-direction: column;
+    max-width: 65rem;
 }
 
 #routes .routes-search {
@@ -289,25 +588,25 @@ body {
 }
 
 .route-item:hover {
-    border: 1px solid var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.route-item--active {
+    background: rgb(0 73 84 / 20%);
 }
 
 .routes--heading .route-item {
     padding-bottom: 8px;
-    font-weight: 500;
     color: var(--highlight-color);
+    font-weight: 500;
 }
 
 .routes--heading .route-item:hover {
-    border: 1px solid transparent;
+    border-color: transparent;
 }
 
 .route-item__path {
     flex: 0 0 38%;
-}
-
-.route-item--active {
-    background: #00495433;
 }
 
 .route-item--active .route-item__path {
@@ -316,11 +615,11 @@ body {
 
 .route-item__badge {
     margin-left: 8px;
-    color: var(--primary-color);
-    background: #004954;
-    border-radius: 4px;
     padding: 1px 6px;
-    font-size: 11px;
+    border-radius: 4px;
+    background: var(--active-background-color);
+    color: var(--primary-color);
+    font-size: 12px;
 }
 
 .route-item__name {
@@ -329,11 +628,16 @@ body {
 }
 
 .route-item__label {
-    flex: 1 0 24%;
     display: flex;
+    flex: 1 0 24%;
     flex-wrap: wrap;
     gap: 4px;
     color: var(--secondary-color);
+}
+
+.routes--heading .route-item .route-item__name,
+.routes--heading .route-item .route-item__label {
+    color: var(--highlight-color);
 }
 
 /* The meta column is hidden when no route has meta */
@@ -346,29 +650,34 @@ body {
     border-radius: 4px;
     background: var(--background-color);
     color: var(--accent-color);
-    font-size: 11px;
-    line-height: 18px;
+    font-size: 12px;
+    line-height: 20px;
     overflow-wrap: anywhere;
 }
 
-.routes--heading .route-item .route-item__name,
-.routes--heading .route-item .route-item__label {
-    color: var(--highlight-color);
-}
-
-/* SSR Data tab */
+/* ==========================================================================
+   SSR Data tab
+   ========================================================================== */
 
 .request-item {
-    cursor: pointer;
-    border: 1px solid #1e293b;
-    border-radius: 5px;
-    color: #fff;
-    padding: 6px 0 0;
     margin-bottom: 6px;
+    padding: 6px 0 0;
+    border: 1px solid var(--background-color);
+    border-radius: 5px;
+    color: var(--text-color);
 }
 
 .request-item--has-error {
-    border-color: #bb1616;
+    border-color: var(--error-color);
+}
+
+.request-item summary {
+    padding: 0 12px 6px;
+    cursor: pointer;
+}
+
+.request-item summary:hover {
+    color: var(--primary-color);
 }
 
 .request-item__labels {
@@ -378,103 +687,32 @@ body {
     color: var(--secondary-color);
 }
 
-.request-item__copy {
-    margin-left: auto;
-}
-
 .request-item__labels--heavy {
     color: var(--highlight-color);
 }
 
-.request-item summary {
-    padding: 0 12px 6px;
-}
-
-.request-item summary:hover {
-    color: var(--primary-color);
+.request-item__copy {
+    margin-left: auto;
 }
 
 .request-item > div {
-    background-color: #1e293b;
-    color: #aeb1c3;
     margin: 4px 0 0;
     padding: 8px;
+    background-color: var(--background-color);
+    color: var(--muted-text-color);
     white-space: pre-wrap;
 }
 
-.tabcontent#ssrData {
-    margin-top: 10px;
-}
+/* ==========================================================================
+   i18n tab
+   ========================================================================== */
 
-.section-head {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 8px;
-}
-
-.section-head__label {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.section-head__label img {
-    width: 28px;
-    height: 28px;
-    filter: var(--svg-secondary-color);
-}
-
-.section-head__title {
-    font-size: 20px;
-    color: #fff;
-    font-weight: 600;
-}
-
-.section-head__subtitle {
-    font-size: 12px;
-    color: #909eb2;
-}
-
-.json__string { color: #C3E88D; }
-.json__number { color: #BABED8; }
-.json__boolean { color: #FFCB6B; }
-.json__null { color: #FFCB6B; }
-.json__key { color: #F07178; }
-
-/* configs */
-#configList {
-   gap: 0.8rem;
-}
-
-.tabbed-card {
-    max-width: 30rem;
-}
-
-.tabbed-card__header {
-    color: #fff;
-    border-top-left-radius: 6px;
-    border-top-right-radius: 6px;
-    padding: 0.75rem 1rem;
-    border: 1px solid #334155;
-    font-weight: 500;
-}
-
-.tabbed-card__body {
-    background: var(--background-color);
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
-    padding: 0.8571429em 1.1428571em;
-    border: 1px solid #334155;
-    border-top: 0;
-}
-
-/* i18n */
 #i18nMessagesList {
     margin-top: 8px;
     line-height: 20px;
 }
 
-div#i18nMessagesList:empty::after {
+#i18nMessagesList:empty::after {
     content: "Messages are empty";
 }
 
@@ -485,6 +723,11 @@ div#i18nMessagesList:empty::after {
 .i18nItem span {
     cursor: pointer;
 }
+
+.i18nItem span:hover {
+    color: var(--highlight-color);
+}
+
 .i18nItem span::before {
     content: '"';
 }
@@ -498,15 +741,11 @@ div#i18nMessagesList:empty::after {
 }
 
 .i18nItem__value {
-    color: #aeb1c3;
+    color: var(--muted-text-color);
 }
 
 .i18nItem__value::after {
     content: '"';
-}
-
-.i18nItem span:hover {
-    color: var(--highlight-color);
 }
 
 #i18nMissingList {
@@ -516,12 +755,16 @@ div#i18nMessagesList:empty::after {
 }
 
 .i18nMissingItem {
-    cursor: pointer;
     overflow-wrap: anywhere;
+    cursor: pointer;
 }
 
 .i18nMissingItem__key {
     color: var(--primary-color);
+}
+
+.i18nMissingItem:hover .i18nMissingItem__key {
+    color: var(--highlight-color);
 }
 
 .i18nMissingItem__locales {
@@ -529,268 +772,19 @@ div#i18nMessagesList:empty::after {
     color: var(--highlight-color);
 }
 
-.i18nMissingItem:hover .i18nMissingItem__key {
-    color: var(--highlight-color);
-}
-
-/* Search fields of the Routes and i18n tabs */
-.search-input {
-    border: 0;
-    padding: 6px 8px;
-    border-radius: 5px;
-    width: 300px;
-}
-
-.search-input:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Small secondary buttons, e.g. "Expand all" or "Copy JSON" */
-.toolbar {
-    display: flex;
-    gap: 6px;
-    margin-bottom: 8px;
-}
-
-.button {
-    padding: 2px 10px;
-    border: 1px solid #334155;
-    border-radius: 4px;
-    background: transparent;
-    color: var(--accent-color);
-    font-size: 12px;
-    cursor: pointer;
-}
-
-.button:hover {
-    border-color: var(--primary-color);
-    color: var(--primary-color);
-}
-
-/* JSON tree for data of unknown shape: SSR Data, Configs, Pinia (src/tree.js) */
-.tree, .tree * {
-    font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace;
-    font-size: 13px;
-}
-
-.tree {
-    line-height: 20px;
-    white-space: normal;
-}
-
-.tree__children {
-    margin-left: 5px;
-    padding-left: 12px;
-    border-left: 1px solid #334155;
-}
-
-.tree > .tree__children {
-    margin-left: 0;
-    padding-left: 0;
-    border-left: 0;
-}
-
-.tree__row {
-    padding-left: 14px;
-    overflow-wrap: anywhere;
-}
-
-.tree__node > summary {
-    cursor: pointer;
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-}
-
-.tree__node > summary:hover .json__key {
-    text-decoration: underline;
-}
-
-.tree__node[open] > summary .tree__preview {
-    opacity: 0.6;
-}
-
-.tree__preview {
-    color: var(--secondary-color);
-}
-
-.tree__more {
-    margin: 4px 0 4px 14px;
-}
-
-/* Titled parts of a card, e.g. state / getters / actions of a Pinia store */
-.tree-section + .tree-section {
-    margin-top: 8px;
-}
-
-.tree-section__title {
-    margin-bottom: 2px;
-    color: var(--highlight-color);
-    font-weight: 500;
-}
-
-.chips {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 4px;
-}
-
-.chip {
-    padding: 0 6px;
-    border-radius: 4px;
-    background: #020420;
-    color: var(--accent-color);
-    font-size: 11px;
-    line-height: 18px;
-}
-
-/* Temporary textarea used to copy text when the Clipboard API is blocked, see src/clipboard.js */
-.clipboard-buffer {
-    position: fixed;
-    top: 0;
-    left: -9999px;
-    opacity: 0;
-}
-
-/* A section whose data couldn't be loaded from the page */
-.load-error {
-    margin: 8px 0;
-    padding: 8px 12px;
-    border-left: 3px solid #bb1616;
-    border-radius: 4px;
-    background: var(--background-color);
-    color: var(--accent-color);
-    overflow-wrap: anywhere;
-}
-
-/* nuxt-not-found state */
-.nuxt-not-found {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 100%;
-    width: 100%;
-    text-align: center;
-    z-index: 1;
-    display: block;
-    color: #fff;
-    background-color: #1e293b;
-    font-size: 2rem;
-    padding-top: 30px;
-    cursor: pointer;
-}
-
-.nuxt-not-found:hover {
-    text-decoration: underline;
-    color: var(--accent-color);
-}
-
-/*components*/
-#componentsList {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-#piniaList {
-    gap: 0.8rem;
-}
+/* ==========================================================================
+   Internals tab
+   ========================================================================== */
 
 /* Tables of the Internals tab don't stretch over a wide panel */
 #hooksList, #directivesList {
     max-width: 40rem;
 }
-/** settings */
-.form-group {
-    padding: 5px 0;
-}
-
-.form-group input, #settings button {
-    border: 0;
-    padding: 6px 10px;
-    border-radius: .375rem;
-    margin-top: 10px;
-}
-
-#settings button {
-    background: var(--primary-color);
-    color: #1c1917;
-    cursor: pointer;
-}
-
-#settings button:hover {
-    background: #16c37e;
-}
-
-#modulesList {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-/* Views of data with a known shape: components, modules */
-/* Tables of the panel (src/dom.js createTable): no frame or background of their own,
-   so they also fit inside a card */
-.data-table {
-    width: 100%;
-    border-collapse: collapse;
-}
-
-.data-table th {
-    padding: 0 12px 4px 0;
-    border-bottom: 1px solid #334155;
-    color: var(--secondary-color);
-    font-weight: 500;
-    text-align: left;
-}
-
-.data-table td {
-    padding: 4px 12px 0 0;
-    vertical-align: top;
-}
-
-.data-table td:first-child {
-    color: #FFCB6B;
-}
-
-.data-table th:last-child,
-.data-table td:last-child {
-    padding-right: 0;
-}
-
-.data-table code {
-    font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace;
-    color: var(--accent-color);
-}
-
-.component-card__lazy {
-    margin-left: 6px;
-    background: var(--background-color);
-    color: var(--secondary-color);
-    font-weight: 400;
-}
-
-.component-card__type {
-    color: #C3E88D;
-    white-space: nowrap;
-}
-
-.component-card__required {
-    color: var(--highlight-color);
-}
-
-.component-card__emits {
-    display: flex;
-    align-items: center;
-    gap: 4px;
-    margin-top: 8px;
-}
 
 .module-card {
     width: 22rem;
     padding: 10px 12px;
-    border: 1px solid #334155;
+    border: 1px solid var(--border-color);
     border-radius: 6px;
     background: var(--background-color);
 }
@@ -802,7 +796,7 @@ div#i18nMessagesList:empty::after {
 }
 
 .module-card__header a {
-    color: #fff;
+    color: var(--text-color);
     font-weight: 600;
     text-decoration: none;
 }
@@ -822,10 +816,62 @@ div#i18nMessagesList:empty::after {
     gap: 8px;
     margin-top: 6px;
     color: var(--secondary-color);
-    font-size: 12px;
+    font-size: 13px;
 }
 
 .module-card__stats a {
     margin-left: auto;
     color: var(--primary-color);
+}
+
+/* ==========================================================================
+   Components tab
+   ========================================================================== */
+
+.component-card__lazy {
+    margin-left: 6px;
+    background: var(--background-color);
+    color: var(--secondary-color);
+    font-weight: 400;
+}
+
+.component-card__type {
+    color: var(--syntax-string-color);
+    white-space: nowrap;
+}
+
+.component-card__required {
+    color: var(--highlight-color);
+}
+
+.component-card__emits {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+/* ==========================================================================
+   Settings tab
+   ========================================================================== */
+
+.form-group {
+    padding: 5px 0;
+}
+
+.form-group input, #settings button {
+    margin-top: 10px;
+    padding: 6px 10px;
+    border: 0;
+    border-radius: 5px;
+}
+
+#settings button {
+    background: var(--primary-color);
+    color: #1c1917;
+    cursor: pointer;
+}
+
+#settings button:hover {
+    background: var(--primary-hover-color);
 }
