@@ -1,13 +1,13 @@
 import { el, setText } from '../dom.js';
-import { formatBytes, jsonSyntaxHighlight, normalizeResponse } from '../format.js';
-import { settings } from '../settings.js';
+import { formatBytes } from '../format.js';
+import { createTree } from '../tree.js';
 import { copyText } from '../clipboard.js';
 
 const HEAVY_RESPONSE_BYTES = 100 * 1024;
 const COPY_FEEDBACK_MS = 1500;
 
 export function setupSsrData() {
-    const setAllOpen = isOpen => document.querySelectorAll('#ssrRequestsList details')
+    const setAllOpen = isOpen => document.querySelectorAll('#ssrRequestsList > details')
         .forEach(details => details.open = isOpen);
 
     document.getElementById('ssrExpandAll').addEventListener('click', () => setAllOpen(true));
@@ -56,15 +56,14 @@ function createCopyButton(getJson) {
 }
 
 function createRequestItem(key, response, error) {
-    const threshold = settings.responseThreshold;
     const size = error ? 0 : new Blob([JSON.stringify(response) ?? '']).size;
 
     let labels = `Response: ${getType(response)}`;
     if (error) {
         labels = 'Response: error'
     } else {
-        if (response && response.hasOwnProperty('length') && response.length > 1) {
-            labels += ` [${response.length} items${response.length > threshold ? ', but only ' + threshold + ' will be shown' : ''}]`
+        if (Array.isArray(response) && response.length > 1) {
+            labels += ` [${response.length} items]`
         }
         labels += ` · ~${formatBytes(size)}`
     }
@@ -74,12 +73,8 @@ function createRequestItem(key, response, error) {
         // The error comes from the inspected page, so it's inserted as text, not as HTML
         dataElement = el('div', {}, `The request has failed:\n${error.message}\n\nStatus code: ${error.statusCode}`);
     } else {
-        let shownResponse = response;
-        if (Array.isArray(response) && response.length > threshold) {
-            shownResponse = response.slice(0, threshold)
-        }
-        shownResponse = normalizeResponse(shownResponse)
-        dataElement = el('div', { innerHTML: jsonSyntaxHighlight(JSON.stringify(shownResponse, null, 4)) });
+        // The tree renders big arrays page by page (Settings → threshold) and nested values on expand
+        dataElement = el('div', {}, createTree(response));
     }
 
     const element = el('details', { className: ['request-item', error && 'request-item--has-error'] },

@@ -52,7 +52,7 @@ test('refresh re-renders without duplicating content', async () => {
 
     assert.equal(document.querySelectorAll('#routesList .route-item').length, 2);
     assert.deepEqual(headers('#modulesList'), ['pinia']);
-    assert.equal(document.querySelectorAll('#ssrRequestsList details').length, 1);
+    assert.equal(document.querySelectorAll('#ssrRequestsList > details').length, 1);
 });
 
 async function refreshWith(page) {

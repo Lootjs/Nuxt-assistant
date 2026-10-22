@@ -118,8 +118,12 @@ test('getComponents shows prop types by name', async () => {
     });
 });
 
-test('getPinia keeps primitive state only', async () => {
+test('getPinia splits stores into state, getters and actions, and makes the state transferable', async () => {
     assert.deepEqual(await evalInPage(queries.getPinia), {
-        user: { name: 'John', profile: {}, logout: 'function' },
+        user: {
+            state: { name: 'John', profile: { age: 30, tags: ['admin'], self: '[Circular]' }, visits: { home: 2 } },
+            getters: { fullName: 'John Doe' },
+            actions: ['logout'],
+        },
     });
 });

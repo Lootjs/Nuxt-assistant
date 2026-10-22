@@ -556,6 +556,83 @@ div#i18nMessagesList:empty::after {
     color: var(--primary-color);
 }
 
+/* JSON tree for data of unknown shape: SSR Data, Configs, Pinia (src/tree.js) */
+.tree, .tree * {
+    font-family: Menlo, Consolas, "DejaVu Sans Mono", monospace;
+    font-size: 13px;
+}
+
+.tree {
+    line-height: 20px;
+    white-space: normal;
+}
+
+.tree__children {
+    margin-left: 5px;
+    padding-left: 12px;
+    border-left: 1px solid #334155;
+}
+
+.tree > .tree__children {
+    margin-left: 0;
+    padding-left: 0;
+    border-left: 0;
+}
+
+.tree__row {
+    padding-left: 14px;
+    overflow-wrap: anywhere;
+}
+
+.tree__node > summary {
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.tree__node > summary:hover .json__key {
+    text-decoration: underline;
+}
+
+.tree__node[open] > summary .tree__preview {
+    opacity: 0.6;
+}
+
+.tree__preview {
+    color: var(--secondary-color);
+}
+
+.tree__more {
+    margin: 4px 0 4px 14px;
+}
+
+/* Titled parts of a card, e.g. state / getters / actions of a Pinia store */
+.tree-section + .tree-section {
+    margin-top: 8px;
+}
+
+.tree-section__title {
+    margin-bottom: 2px;
+    color: var(--highlight-color);
+    font-weight: 500;
+}
+
+.chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.chip {
+    padding: 0 6px;
+    border-radius: 4px;
+    background: #020420;
+    color: var(--accent-color);
+    font-size: 11px;
+    line-height: 18px;
+}
+
 /* Temporary textarea used to copy text when the Clipboard API is blocked, see src/clipboard.js */
 .clipboard-buffer {
     position: fixed;
@@ -649,6 +726,11 @@ tbody tr td:nth-child(1) {
 #settings button {
     background: var(--primary-color);
     color: #1c1917;
+    cursor: pointer;
+}
+
+#settings button:hover {
+    background: #16c37e;
 }
 
 #modulesList {

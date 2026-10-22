@@ -1,8 +1,9 @@
-import { renderConfigCards } from '../cards.js';
+import { renderCustomCards } from '../cards.js';
+import { createTree } from '../tree.js';
 
 export function renderConfigs(payload) {
-    renderConfigCards({
+    renderCustomCards({
         ...payload.config,
         state: payload.state,
-    }, document.getElementById('configList'));
+    }, document.getElementById('configList'), config => createTree(config, { expandDepth: 1 }));
 }

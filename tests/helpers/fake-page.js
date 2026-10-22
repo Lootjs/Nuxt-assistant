@@ -6,6 +6,21 @@ function installFakeNuxtApp() {
         { path: '/en/claims/:id', name: 'claims-id___en', meta: { layout: 'form', middleware: () => {} }, props: { default: false } },
         { path: '/ar/claims/:id', name: 'claims-id___ar', meta: {}, props: { default: false } },
     ];
+    // Like a Pinia store: state props are also exposed on the store, next to getters and actions
+    function createUserStore() {
+        const $state = { name: 'John', profile: { age: 30, tags: new Set(['admin']) }, visits: new Map([['home', 2]]) };
+        $state.profile.self = $state.profile;
+
+        return {
+            $id: 'user',
+            $state,
+            _p: {},
+            ...$state,
+            fullName: 'John Doe',
+            logout() {},
+        };
+    }
+
     const nuxtApp = {
         versions: { nuxt: '4.5.2', vue: '3.5.43' },
         payload: {
@@ -27,7 +42,7 @@ function installFakeNuxtApp() {
             getBrowserLocale: () => 'ar',
             messages: { value: { en: { hello: { t: 0, b: { t: 2, s: 'Hello' } }, compiled: function compiled() {} }, ar: {} } },
         },
-        $pinia: { _s: new Map([['user', { name: 'John', profile: { age: 30 }, logout() {}, $id: 'user', _p: {} }]]) },
+        $pinia: { _s: new Map([['user', createUserStore()]]) },
         hooks: { _hooks: { 'app:mounted': [() => {}, () => {}], 'page:finish': [() => {}] } },
         vueApp: {
             config: { globalProperties: { $router: {}, $i18n: {}, $pinia: {} } },

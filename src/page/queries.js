@@ -126,7 +126,7 @@ export function getComponents() {
     return replaceFunctions(Object.values(window.useNuxtApp().vueApp._context.components));
 }
 
-// Only primitive state is shown: objects are replaced with {} because big stores can't be transferred
+// { storeName: { state, getters, actions: [names] } }
 export function getPinia() {
     const nuxtApp = window.useNuxtApp();
 
@@ -134,20 +134,78 @@ export function getPinia() {
         return null;
     }
 
+    // Limits keep big stores transferable (DevTools can't pass huge eval results)
+    const MAX_DEPTH = 8;
+    const MAX_ITEMS = 500;
+
+    // Store values can be anything: circular references, Maps, Sets, Dates, class instances, huge lists
+    function toPlain(value, depth, ancestors) {
+        if (typeof value === 'function') {
+            return `function ${value.name}`.trim();
+        }
+        if (typeof value === 'bigint') {
+            return `${value}n`;
+        }
+        if (typeof value === 'symbol') {
+            return value.toString();
+        }
+        if (value === null || typeof value !== 'object') {
+            return value;
+        }
+        if (value instanceof Date) {
+            return value.toISOString();
+        }
+        if (ancestors.has(value)) {
+            return '[Circular]';
+        }
+        if (depth >= MAX_DEPTH) {
+            return Array.isArray(value) ? `[Array(${value.length})]` : '[Object]';
+        }
+
+        ancestors.add(value);
+        const items = value instanceof Map || value instanceof Set ? Array.from(value) : null;
+        let result;
+
+        if (value instanceof Map) {
+            result = Object.fromEntries(items.slice(0, MAX_ITEMS)
+                .map(([key, item]) => [String(key), toPlain(item, depth + 1, ancestors)]));
+        } else if (Array.isArray(value) || value instanceof Set) {
+            const list = items || value;
+            result = list.slice(0, MAX_ITEMS).map(item => toPlain(item, depth + 1, ancestors));
+            if (list.length > MAX_ITEMS) {
+                result.push(`… ${list.length - MAX_ITEMS} more items`);
+            }
+        } else {
+            result = {};
+            for (const key of Object.keys(value).slice(0, MAX_ITEMS)) {
+                result[key] = toPlain(value[key], depth + 1, ancestors);
+            }
+        }
+
+        // Only ancestors make a cycle: the same object may appear in two branches
+        ancestors.delete(value);
+
+        return result;
+    }
+
     return Object.fromEntries(Array.from(nuxtApp.$pinia._s).map(([storeName, store]) => {
-        const entries = Object.entries(store)
-            .filter(([prop]) => !prop.startsWith('$') && !prop.startsWith('_'))
-            .map(([prop, value]) => {
-                if (typeof value === 'function') {
-                    return [prop, 'function'];
-                }
-                if (typeof value === 'object') {
-                    return [prop, {}];
-                }
+        const stateKeys = Object.keys(store.$state);
+        const getters = {};
+        const actions = [];
 
-                return [prop, value];
-            });
+        // Store props that aren't state are getters (computed values) and actions (functions)
+        for (const key of Object.keys(store)) {
+            if (key.startsWith('$') || key.startsWith('_') || stateKeys.includes(key)) {
+                continue;
+            }
 
-        return [storeName, Object.fromEntries(entries)];
+            if (typeof store[key] === 'function') {
+                actions.push(key);
+            } else {
+                getters[key] = toPlain(store[key], 1, new Set());
+            }
+        }
+
+        return [storeName, { state: toPlain(store.$state, 0, new Set()), getters, actions }];
     }));
 }

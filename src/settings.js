@@ -1,7 +1,7 @@
 const DEFAULT_RESPONSE_THRESHOLD = 20;
 
 export const settings = {
-    // Max number of items shown for an array response on the SSR Data tab
+    // Page size of data trees (src/tree.js): items shown at once before the "Show more" button
     responseThreshold: DEFAULT_RESPONSE_THRESHOLD,
 };
 

@@ -9,6 +9,7 @@ import { renderI18n, setupI18n } from '../src/tabs/i18n.js';
 import { renderHooks, renderModules, renderDirectives } from '../src/tabs/internals.js';
 import { renderComponents } from '../src/tabs/components.js';
 import { renderConfigs } from '../src/tabs/configs.js';
+import { renderPinia } from '../src/tabs/pinia.js';
 import { settings } from '../src/settings.js';
 
 const text = selector => document.querySelector(selector).textContent;
@@ -87,9 +88,11 @@ test('ssr data shows sizes, truncates big arrays and escapes errors', () => {
     });
 
     // Failed requests go first
-    const [failed, list] = all('#ssrRequestsList details');
-    assert.equal(list.querySelector('.request-item__info').textContent, 'Response: array [3 items, but only 2 will be shown] · ~7 B');
+    const [failed, list] = all('#ssrRequestsList > details');
+    assert.equal(list.querySelector('.request-item__info').textContent, 'Response: array [3 items] · ~7 B');
+    // The tree shows a page of settings.responseThreshold items and a button for the rest
     assert.equal(list.querySelectorAll('.json__number').length, 2);
+    assert.equal(list.querySelector('.tree__more').textContent, 'Show 1 more of 1');
     assert.ok(failed.classList.contains('request-item--has-error'));
     assert.equal(failed.querySelector('b'), null);
     assert.match(failed.textContent, /<b>boom<\/b>/);
@@ -210,18 +213,49 @@ test('components and configs render cards', () => {
 test('ssr data: failed requests go first, expand and collapse all', () => {
     setupSsrData();
     renderSsrData({
-        data: { first: [1], failed: null, last: { a: 1 } },
+        data: { first: [1], failed: null, last: { a: 1, nested: { b: 2 } } },
         _errors: { first: null, failed: { message: 'boom', statusCode: 500 } },
     });
 
-    const titles = () => all('#ssrRequestsList summary').map(summary => summary.title);
+    const titles = () => all('#ssrRequestsList > details > summary').map(summary => summary.title);
     assert.deepEqual(titles(), ['failed', 'first', 'last']);
 
     document.getElementById('ssrExpandAll').click();
-    assert.ok(all('#ssrRequestsList details').every(details => details.open));
+    assert.ok(all('#ssrRequestsList > details').every(details => details.open));
+    // Only the requests: nodes of the response trees stay as they are
+    assert.ok(all('#ssrRequestsList .tree details').every(details => !details.open));
 
     document.getElementById('ssrCollapseAll').click();
-    assert.ok(all('#ssrRequestsList details').every(details => !details.open));
+    assert.ok(all('#ssrRequestsList > details').every(details => !details.open));
+});
+
+test('pinia shows state and getters as trees and actions as chips', () => {
+    renderPinia({
+        user: {
+            state: { name: 'John', profile: { age: 30 } },
+            getters: { fullName: 'John Doe' },
+            actions: ['login', 'logout'],
+        },
+        empty: { state: {}, getters: {}, actions: [] },
+    });
+
+    const [user, empty] = all('#piniaList .tabbed-card');
+    const sectionTitles = card => [...card.querySelectorAll('.tree-section__title')].map(title => title.textContent);
+
+    assert.deepEqual(sectionTitles(user), ['state', 'getters', 'actions']);
+    assert.match(user.textContent, /name: "John"/);
+    // The first level is expanded
+    assert.match(user.textContent, /age: 30/);
+    assert.deepEqual([...user.querySelectorAll('.chip')].map(chip => chip.textContent), ['login', 'logout']);
+    assert.deepEqual(sectionTitles(empty), ['state']);
+});
+
+test('configs show their values as trees', () => {
+    renderConfigs({ config: { public: { apiBase: '/api', flags: { beta: true } } }, state: {} });
+
+    assert.equal(all('#configList .tabbed-card').length, 1);
+    assert.ok(document.querySelector('#configList .tree'));
+    assert.match(text('#configList'), /beta: true/);
 });
 
 test('ssr data copies the full response, not the truncated one, without toggling the request', async () => {
