@@ -2,16 +2,30 @@
 // with toString(). So each of them must be self-contained: no imports and no references to anything
 // declared outside the function body. Their results must be JSON-serializable.
 
+// Queries return null when the feature isn't installed (i18n, Pinia) and throw when something is broken
+
+export function detectNuxt() {
+    return typeof window.useNuxtApp === 'function';
+}
+
+// Kept apart from getPayload: a payload that can't be serialized mustn't break the versions
 export function getOverview() {
     const nuxtApp = window.useNuxtApp();
-    const { pinia, ...payload } = nuxtApp.payload;
 
     return {
         versions: nuxtApp.versions,
-        payload,
+        serverRendered: !!nuxtApp.payload.serverRendered,
+        prerenderedAt: nuxtApp.payload.prerenderedAt ?? null,
         i18nIncluded: nuxtApp.hasOwnProperty('$i18n'),
         piniaInstalled: nuxtApp.hasOwnProperty('$pinia'),
     };
+}
+
+// The Pinia state is dropped: it's shown on its own tab and can be huge
+export function getPayload() {
+    const { pinia, ...payload } = window.useNuxtApp().payload;
+
+    return payload;
 }
 
 export function getBuildId() {
@@ -117,7 +131,7 @@ export function getPinia() {
     const nuxtApp = window.useNuxtApp();
 
     if (!nuxtApp.hasOwnProperty('$pinia')) {
-        return {};
+        return null;
     }
 
     return Object.fromEntries(Array.from(nuxtApp.$pinia._s).map(([storeName, store]) => {

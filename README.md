@@ -5,22 +5,26 @@
 
 ## Features
 
-- **Nuxt & Vue Versions**: Easily view the current versions of Nuxt and Vue being used in your project.
-- **Plugins**: Get a detailed list of plugins added to your project, helping you manage and understand your site's functionality.
-- **Hooks & Directives**: Keep track of which hooks and directives are installed, streamlining your development process.
-- **i18n Support**:
-    - View all translations.
-    - Search functionality within i18n.
-    - Access to detailed i18n data.
-- **Server-Side Rendering (SSR)**:
-    - Monitor all SSR requests.
-    - Identify and debug erroneous requests efficiently.
-- **Router Insights**:
-    - Overview of all routes.
-    - Details of the current route.
-- **Configuration Details**:
-    - Insight into the application and runtime configurations.
-    - Comprehensive information about the State.
+- **Overview**: Nuxt and Vue versions, build ID, rendering mode (SSR / SSG / SPA), i18n and Pinia detection,
+  and quick stats: routes, SSR requests, inline payload size and global components. Each card opens its tab.
+- **Routes**:
+    - All routes with their meta.
+    - The current route is highlighted, dynamic routes (`/users/:id`) included.
+- **SSR Data**:
+    - All requests made during server-side rendering, with their responses.
+    - Response sizes, with large ones highlighted, and the total payload data size.
+    - Failed requests with their error message and status code.
+- **Configs**: Public runtime config, app config and the State.
+- **i18n**:
+    - Current, default and browser locales.
+    - All translations with case-insensitive search, including messages with placeholders, plurals and linked messages.
+    - Missing translations: keys present in one locale but absent in another.
+- **Pinia**: Stores with their primitive state and getters values, and their actions.
+- **Internals**:
+    - Installed Nuxt modules with their info from the Nuxt modules catalog.
+    - Directives and their hooks.
+    - Hooks with the number of listeners.
+- **Components**: Globally registered components with their props.
 
 ## Development
 

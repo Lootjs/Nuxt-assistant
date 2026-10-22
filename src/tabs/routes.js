@@ -2,7 +2,6 @@ import { el, setText } from '../dom.js';
 
 export function renderRoutes(routes) {
     setText('routesTotal', `Routes total: ${routes.length}`);
-    setText('routes-count', routes.length);
     document.getElementById('routesList').replaceChildren(...routes.map(createRouteItem));
 }
 

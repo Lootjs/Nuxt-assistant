@@ -6,7 +6,7 @@ export function renderModules(moduleInfos) {
     moduleInfos.filter(Boolean).forEach(({ name, ...info }) => {
         modules[name] = info;
     });
-    renderConfigCards(modules, document.getElementById('pluginsList'));
+    renderConfigCards(modules, document.getElementById('modulesList'));
 }
 
 export function renderHooks(hookListenerCounts) {

@@ -21,6 +21,19 @@ Pull requests are the best way to propose changes to the codebase. We actively w
 3. If you've changed APIs, update the documentation.
 4. Issue that pull request!
 
+## Development setup
+
+The extension has no build step. You need Node.js 22.2+ for the tests and packaging:
+
+```sh
+npm install
+npm test
+```
+
+Load the repository folder with "Load unpacked" in `chrome://extensions` to try your changes.
+Before opening a pull request, make sure `npm test` passes and go through the manual smoke test
+in [TESTING.md](TESTING.md).
+
 ## Report bugs using Github's issues
 
 We use GitHub issues to track public bugs. Report a bug by [opening a new issue](https://github.com/Lootjs/Nuxt-assistant/issues/new); it's that easy!

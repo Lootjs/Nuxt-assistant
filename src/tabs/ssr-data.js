@@ -5,11 +5,10 @@ import { settings } from '../settings.js';
 const HEAVY_RESPONSE_BYTES = 100 * 1024;
 
 export function renderSsrData(payload) {
-    if (payload.prerenderedAt) {
-        const date = new Date(payload.prerenderedAt);
-        const formattedDate = date.toLocaleDateString('ru-RU') + ' ' + date.toLocaleTimeString();
-        setText('prerenderedAt', `Prerendered at: ${formattedDate}`);
-    }
+    // Formatted in the user's locale
+    setText('prerenderedAt', payload.prerenderedAt
+        ? `Prerendered at: ${new Date(payload.prerenderedAt).toLocaleString()}`
+        : '');
 
     const errors = payload._errors || {};
     const data = payload.data || {};
@@ -18,7 +17,6 @@ export function renderSsrData(payload) {
     const totalSize = items.reduce((sum, { size }) => sum + size, 0);
 
     document.getElementById('ssrRequestsList').replaceChildren(...items.map(({ element }) => element));
-    setText('ssr-requests-count', requestKeys.length);
     setText('ssrDataTotal', `Requests: ${requestKeys.length}, total size: ~${formatBytes(totalSize)}`);
 }
 
@@ -57,11 +55,11 @@ function createRequestItem(key, response, error) {
         dataElement = el('div', { innerHTML: jsonSyntaxHighlight(JSON.stringify(shownResponse, null, 4)) });
     }
 
-    const element = el('details', { className: ['routeItem', error && 'routeItem--hasError'] },
+    const element = el('details', { className: ['request-item', error && 'request-item--has-error'] },
         el('summary', { title: key },
             el('span', {}, 'Request: '),
             key,
-            el('div', { className: ['routeItem__labels', size >= HEAVY_RESPONSE_BYTES && 'routeItem__labels--heavy'] }, labels),
+            el('div', { className: ['request-item__labels', size >= HEAVY_RESPONSE_BYTES && 'request-item__labels--heavy'] }, labels),
         ),
         dataElement,
     );

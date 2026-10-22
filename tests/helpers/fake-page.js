@@ -45,13 +45,20 @@ function installFakeNuxtApp() {
     window.useNuxtApp = () => nuxtApp;
 }
 
-// A fake inspected page: a separate JS realm, like the real page is for the DevTools panel
-export function createFakePage({ withNuxt = true, payloadScript = null } = {}) {
+/**
+ * A fake inspected page: a separate JS realm, like the real page is for the DevTools panel.
+ * patch is a self-contained function run in the page after the Nuxt app is installed,
+ * e.g. () => { delete window.useNuxtApp().$i18n }
+ */
+export function createFakePage({ withNuxt = true, payloadScript = null, patch = null } = {}) {
     const page = vm.createContext({ Blob });
     vm.runInContext('globalThis.window = globalThis', page);
     page.document = { querySelector: () => payloadScript };
     if (withNuxt) {
         vm.runInContext(`(${installFakeNuxtApp})()`, page);
+    }
+    if (patch) {
+        vm.runInContext(`(${patch})()`, page);
     }
 
     return page;

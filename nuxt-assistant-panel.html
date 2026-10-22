@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="nuxt-assistant-panel.css">
 </head>
 <body>
-<div class="nuxt-not-found">
+<div class="nuxt-not-found" hidden>
     Nuxt is not found! Click here to re-fetch data
 </div>
 <div id="debug-content">
@@ -56,7 +56,7 @@
 
         <div class="main">
 
-            <div id="common" class="tabcontent" style="display: flex">
+            <div id="common" class="tabcontent active">
                 <div class="section-head">
                     <div class="section-head__label">
                         <img src="./images/icon-overview.svg" alt=""/>
@@ -69,105 +69,8 @@
                     </div>
                 </div>
 
-                <div class="widgets">
-                    <div class="widget">
-                        <div class="widget__highlight" id="nuxt-version"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-nuxt.svg" alt="nuxt logo"/>
-                            </div>
-                            <div class="widget__name">Version</div>
-                        </div>
-                    </div>
-
-                    <div class="widget">
-                        <div class="widget__highlight" id="vue-version"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-vue.svg" alt="vue logo"/>
-                            </div>
-                            <div class="widget__name">Version</div>
-                        </div>
-                    </div>
-
-                    <div class="widget widget--covered">
-                        <div class="widget__highlight" id="i18n-included">
-                            <img src="./images/icon-check.svg" id="i18n-true"/>
-                            <img src="./images/icon-denied.svg" id="i18n-false"/>
-                        </div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-i18n.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">I18n</div>
-                        </div>
-                    </div>
-
-                    <div class="widget widget--covered">
-                        <div class="widget__highlight" id="pinia-included">
-                            <img src="./images/icon-check.svg" id="pinia-true"/>
-                            <img src="./images/icon-denied.svg" id="pinia-false"/>
-                        </div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/sidebar-crystal.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">Pinia</div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="widgets">
-                    <div class="widget widget--covered">
-                        <div class="widget__highlight" id="rendering-mode"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-overview.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">Rendering</div>
-                        </div>
-                    </div>
-
-                    <div class="widget widget--covered" data-tab="routes">
-                        <div class="widget__highlight" id="routes-count"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-router.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">Routes</div>
-                        </div>
-                    </div>
-
-                    <div class="widget widget--covered" data-tab="ssrData">
-                        <div class="widget__highlight" id="ssr-requests-count"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-ssr.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">SSR requests</div>
-                        </div>
-                    </div>
-
-                    <div class="widget widget--covered" data-tab="ssrData" title="Size of the payload inlined into the HTML (__NUXT_DATA__)">
-                        <div class="widget__highlight" id="payload-size"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-ssr.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">Inline payload</div>
-                        </div>
-                    </div>
-
-                    <div class="widget widget--covered" data-tab="components">
-                        <div class="widget__highlight" id="components-count"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/sidebar-crystal.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">Global components</div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Cards are created by setupOverview() in src/tabs/overview.js -->
+                <div id="overviewWidgets"></div>
             </div>
 
             <div id="routes" class="tabcontent">
@@ -177,7 +80,7 @@
                     </div>
                     <div class="section-head__body">
                         <div class="section-head__title">Routes</div>
-                        <div class="section-head__subtitle" id="routesTotal"></div>
+                        <div class="section-head__subtitle" id="routesTotal" data-page-content></div>
                     </div>
                 </div>
 
@@ -194,7 +97,7 @@
                         </div>
                     </div>
                 </div>
-                <div class="routes" id="routesList"></div>
+                <div class="routes" id="routesList" data-page-content></div>
             </div>
 
             <div id="configs" class="tabcontent">
@@ -209,7 +112,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="configList" class="flexbox"></div>
+                <div id="configList" data-page-content class="flexbox"></div>
             </div>
 
             <div id="pinia" class="tabcontent">
@@ -224,7 +127,7 @@
                         </div>
                     </div>
                 </div>
-                <div id="piniaList" class="flexbox"></div>
+                <div id="piniaList" data-page-content class="flexbox"></div>
             </div>
 
             <div id="ssrData" class="tabcontent">
@@ -234,11 +137,11 @@
                     </div>
                     <div class="section-head__body">
                         <div class="section-head__title">SSR Data</div>
-                        <div class="section-head__subtitle" id="prerenderedAt"></div>
-                        <div class="section-head__subtitle" id="ssrDataTotal"></div>
+                        <div class="section-head__subtitle" id="prerenderedAt" data-page-content></div>
+                        <div class="section-head__subtitle" id="ssrDataTotal" data-page-content></div>
                     </div>
                 </div>
-                <div id="ssrRequestsList"></div>
+                <div id="ssrRequestsList" data-page-content></div>
             </div>
 
             <div id="i18n" class="tabcontent">
@@ -252,35 +155,8 @@
                     </div>
                 </div>
 
-                <div class="widgets">
-                    <div class="widget widget--covered">
-                        <div class="widget__highlight" id="currentLocale"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-i18n.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">Current Locale</div>
-                        </div>
-                    </div>
-                    <div class="widget widget--covered">
-                        <div class="widget__highlight" id="defaultLocale"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-i18n.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">Default Locale</div>
-                        </div>
-                    </div>
-                    <div class="widget widget--covered">
-                        <div class="widget__highlight" id="browserLocale"></div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-i18n.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">Browser's Locale</div>
-                        </div>
-                    </div>
-                </div>
+                <!-- Cards are created by setupI18n() in src/tabs/i18n.js -->
+                <div class="widgets" id="i18nWidgets"></div>
 
                 <div class="divider--margined"></div>
                 <div class="section-head">
@@ -307,7 +183,7 @@
                 <div>
                     <input type="search" id="i18nMessagesInput" placeholder="Find specific keys"/>
                 </div>
-                <div id="i18nMessagesList"></div>
+                <div id="i18nMessagesList" data-page-content></div>
                 <div class="section-end"></div>
             </div>
 
@@ -321,7 +197,7 @@
                     </div>
                 </div>
 
-                <div id="pluginsList"></div>
+                <div id="modulesList" data-page-content></div>
                 <div class="section-end"></div>
 
                 <div class="divider--margined"></div>
@@ -333,7 +209,7 @@
                         <div class="section-head__title">Directives</div>
                     </div>
                 </div>
-                <div id="directivesList"></div>
+                <div id="directivesList" data-page-content></div>
                 <div class="section-end"></div>
 
                 <div class="divider--margined"></div>
@@ -345,7 +221,7 @@
                         <div class="section-head__title">Hooks</div>
                     </div>
                 </div>
-                <div id="hooksList"></div>
+                <div id="hooksList" data-page-content></div>
                 <div class="section-end"></div>
             </div>
 
@@ -356,10 +232,10 @@
                     </div>
                     <div class="section-head__body">
                         <div class="section-head__title">Components</div>
-                        <div class="section-head__subtitle" id="components-subtitle"></div>
+                        <div class="section-head__subtitle" id="components-subtitle" data-page-content></div>
                     </div>
                 </div>
-                <div id="componentsList"></div>
+                <div id="componentsList" data-page-content></div>
             </div>
 
 

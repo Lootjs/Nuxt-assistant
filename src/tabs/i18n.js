@@ -1,23 +1,35 @@
 import { el, setText } from '../dom.js';
-import { setTabVisible } from '../navigation.js';
+import { createWidget } from '../widgets.js';
 import { countMessagesByLocale, filterMessages, findMissingTranslations, flattenI18n } from '../i18n/messages.js';
 
 let messages = [];
 
 const searchInput = () => document.getElementById('i18nMessagesInput');
 
-export function setupI18nSearch() {
+const WIDGETS = [
+    { id: 'currentLocale', name: 'Current Locale' },
+    { id: 'defaultLocale', name: 'Default Locale' },
+    { id: 'browserLocale', name: 'Browser\'s Locale' },
+];
+
+export function setupI18n() {
+    document.getElementById('i18nWidgets').replaceChildren(
+        ...WIDGETS.map(widget => createWidget({ ...widget, icon: './images/icon-i18n.svg' }))
+    );
     searchInput().addEventListener('input', event => renderMessages(filterMessages(messages, event.target.value)));
 }
 
-export function hideI18n() {
-    setTabVisible('i18n', false);
+// Drops messages of the previous run, so the search doesn't bring them back over a load error
+export function clearI18n() {
+    messages = [];
+    document.getElementById('i18nMissingList').replaceChildren();
+    ['missingTotal', 'messagesTotal', 'i18nLocalesList', 'currentLocale', 'defaultLocale', 'browserLocale']
+        .forEach(id => setText(id, ''));
 }
 
 export function renderI18n({ activeLocale, defaultLocale, browserLocale, locales, messages: rawMessages }) {
     messages = flattenI18n(rawMessages);
 
-    setTabVisible('i18n', true);
     setText('currentLocale', activeLocale);
     setText('defaultLocale', defaultLocale);
     setText('browserLocale', browserLocale);

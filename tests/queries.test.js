@@ -32,14 +32,41 @@ test('passes arguments to the query', async () => {
     assert.equal(await evalInPage((a, b) => a + b, 2, 3), 5);
 });
 
-test('getOverview drops the pinia state from the payload', async () => {
-    const { versions, payload, i18nIncluded, piniaInstalled } = await evalInPage(queries.getOverview);
+test('detectNuxt', async () => {
+    assert.equal(await evalInPage(queries.detectNuxt), true);
 
-    assert.deepEqual(versions, { nuxt: '4.5.2', vue: '3.5.43' });
+    setPage(createFakePage({ withNuxt: false }));
+    assert.equal(await evalInPage(queries.detectNuxt), false);
+});
+
+test('getOverview', async () => {
+    assert.deepEqual(await evalInPage(queries.getOverview), {
+        versions: { nuxt: '4.5.2', vue: '3.5.43' },
+        serverRendered: true,
+        prerenderedAt: null,
+        i18nIncluded: true,
+        piniaInstalled: true,
+    });
+});
+
+test('getPayload drops the pinia state', async () => {
+    const payload = await evalInPage(queries.getPayload);
+
     assert.equal(payload.pinia, undefined);
     assert.deepEqual(payload.data, { wordings: [{ name: 'Life' }] });
-    assert.equal(i18nIncluded, true);
-    assert.equal(piniaInstalled, true);
+    assert.deepEqual(payload.config, { public: { apiBase: '/api' } });
+});
+
+test('optional features return null when not installed', async () => {
+    setPage(createFakePage({
+        patch: () => {
+            delete window.useNuxtApp().$i18n;
+            delete window.useNuxtApp().$pinia;
+        },
+    }));
+
+    assert.equal(await evalInPage(queries.getI18n), null);
+    assert.equal(await evalInPage(queries.getPinia), null);
 });
 
 test('getBuildId and getInlinePayloadSize', async () => {

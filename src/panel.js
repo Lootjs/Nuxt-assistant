@@ -1,23 +1,13 @@
-import { evalInPage, PageEvalError } from './page/eval.js';
-import {
-    getBuildId,
-    getComponents,
-    getDirectives,
-    getI18n,
-    getInlinePayloadSize,
-    getInternals,
-    getOverview,
-    getPinia,
-    getRoutes,
-} from './page/queries.js';
+import { collectSnapshot } from './snapshot.js';
+import { renderSection } from './sections.js';
 import { fetchModuleInfo, getModuleCandidates } from './modules-api.js';
-import { openTab, setupNavigation } from './navigation.js';
+import { openTab, setTabVisible, setupNavigation } from './navigation.js';
 import { loadSettings, setupSettings } from './settings.js';
-import { renderBuildId, renderInlinePayloadSize, renderOverview, resetOverview } from './tabs/overview.js';
+import { clearOverview, renderOverview, setupOverview } from './tabs/overview.js';
 import { renderSsrData } from './tabs/ssr-data.js';
 import { renderConfigs } from './tabs/configs.js';
 import { renderRoutes } from './tabs/routes.js';
-import { hideI18n, renderI18n, setupI18nSearch } from './tabs/i18n.js';
+import { clearI18n, renderI18n, setupI18n } from './tabs/i18n.js';
 import { renderDirectives, renderHooks, renderModules } from './tabs/internals.js';
 import { renderComponents } from './tabs/components.js';
 import { renderPinia } from './tabs/pinia.js';
@@ -25,68 +15,97 @@ import { renderPinia } from './tabs/pinia.js';
 // Incremented on every run so that async work from a previous run doesn't render stale data
 let currentRunId = 0;
 
-/**
- * Runs a page query and renders its result. Failures in the page are expected (pages without Nuxt,
- * apps without i18n or pinia), so they're logged with console.debug: console.warn would flood
- * the extension's error page in chrome://extensions. Rendering errors are real bugs and are rethrown.
- */
-function load(query, render, onFailure) {
-    return evalInPage(query).then(render, error => {
-        if (!(error instanceof PageEvalError)) {
-            throw error;
-        }
+function setNuxtNotFoundVisible(isVisible) {
+    document.querySelector('.nuxt-not-found').hidden = !isVisible;
+}
 
-        console.debug(`[Nuxt Assistant] ${query.name} failed:`, error.message);
-        onFailure?.(error);
+// Removes data of the previous page, so it isn't shown for a page without Nuxt
+function clearPageContent() {
+    document.querySelectorAll('[data-page-content]').forEach(element => element.replaceChildren());
+    clearOverview();
+    clearI18n();
+}
+
+// Optional tabs (i18n, Pinia) are hidden when the app doesn't use the feature, but stay visible on a load error
+function renderSnapshot(sections) {
+    renderOverview(sections);
+
+    renderSection(sections.payload, payload => {
+        renderSsrData(payload);
+        renderConfigs(payload);
+    }, { errorContainers: ['ssrRequestsList', 'configList'] });
+
+    renderSection(sections.routes, renderRoutes, { errorContainers: ['routesList'] });
+
+    renderSection(sections.i18n, i18n => {
+        setTabVisible('i18n', true);
+        renderI18n(i18n);
+    }, {
+        errorContainers: ['i18nMessagesList'],
+        onNotInstalled: () => setTabVisible('i18n', false),
+        onError: () => {
+            setTabVisible('i18n', true);
+            clearI18n();
+        },
+    });
+
+    renderSection(sections.internals, ({ hookListenerCounts }) => renderHooks(hookListenerCounts), {
+        errorContainers: ['modulesList', 'hooksList'],
+    });
+    renderSection(sections.directives, renderDirectives, { errorContainers: ['directivesList'] });
+    renderSection(sections.components, renderComponents, { errorContainers: ['componentsList'] });
+
+    renderSection(sections.pinia, stores => {
+        setTabVisible('pinia', true);
+        renderPinia(stores);
+    }, {
+        errorContainers: ['piniaList'],
+        onNotInstalled: () => setTabVisible('pinia', false),
+        onError: () => setTabVisible('pinia', true),
     });
 }
 
-function showNuxtNotFound() {
-    const notFound = document.querySelector('.nuxt-not-found');
-    notFound.textContent = 'Nuxt is not found! Click here to re-fetch data';
-    notFound.onclick = () => runAssistant();
-    notFound.style.display = 'block';
+// Module info comes from the network, so it's rendered after the rest of the panel
+async function loadModules(sections, runId) {
+    if (sections.internals.status !== 'ok') {
+        return;
+    }
+
+    const candidates = getModuleCandidates(sections.internals.data.globalProperties);
+    const moduleInfos = await Promise.all(candidates.map(fetchModuleInfo));
+
+    if (runId === currentRunId) {
+        renderModules(moduleInfos);
+    }
 }
 
-function hideNuxtNotFound() {
-    document.querySelector('.nuxt-not-found').style.display = 'none';
-}
-
-function runAssistant() {
+async function runAssistant() {
     const runId = ++currentRunId;
     const title = document.querySelector('.header__title');
     title.textContent = 'Fetching..';
-    setTimeout(() => title.textContent = 'Nuxt Assistant', 300);
-    resetOverview();
 
-    load(getBuildId, renderBuildId, () => renderBuildId('N/A'));
-    load(getInlinePayloadSize, renderInlinePayloadSize, () => renderInlinePayloadSize(null));
-
-    load(getOverview, overview => {
-        hideNuxtNotFound();
-        renderOverview(overview);
-        renderSsrData(overview.payload);
-        renderConfigs(overview.payload);
-    }, showNuxtNotFound);
-
-    load(getRoutes, renderRoutes);
-    // null means the app simply has no i18n installed
-    load(getI18n, i18n => i18n ? renderI18n(i18n) : hideI18n(), hideI18n);
-
-    load(getInternals, async ({ globalProperties, hookListenerCounts }) => {
-        const moduleInfos = await Promise.all(getModuleCandidates(globalProperties).map(fetchModuleInfo));
+    try {
+        const { hasNuxt, sections } = await collectSnapshot();
 
         if (runId !== currentRunId) {
             return;
         }
 
-        renderModules(moduleInfos);
-        renderHooks(hookListenerCounts);
-    });
+        setNuxtNotFoundVisible(!hasNuxt);
 
-    load(getDirectives, renderDirectives);
-    load(getComponents, renderComponents);
-    load(getPinia, renderPinia);
+        if (!hasNuxt) {
+            clearPageContent();
+
+            return;
+        }
+
+        renderSnapshot(sections);
+        await loadModules(sections, runId);
+    } finally {
+        if (runId === currentRunId) {
+            title.textContent = 'Nuxt Assistant';
+        }
+    }
 }
 
 chrome.runtime.onMessage.addListener(message => {
@@ -96,7 +115,9 @@ chrome.runtime.onMessage.addListener(message => {
 });
 
 setupNavigation({ onRefresh: runAssistant });
-setupI18nSearch();
+document.querySelector('.nuxt-not-found').addEventListener('click', () => runAssistant());
+setupOverview();
+setupI18n();
 setupSettings({
     onSave: () => {
         runAssistant();

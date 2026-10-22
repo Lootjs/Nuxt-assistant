@@ -11,8 +11,11 @@ Tests run on Node's built-in test runner (Node 22.2+), the panel DOM is emulated
 
 - `tests/queries.test.js`: the code executed in the inspected page (`src/page/queries.js`), run in a separate
   JS realm against a fake Nuxt app. Also checks that every query is self-contained and can run repeatedly.
+- `tests/snapshot.test.js`: section statuses: a broken section fails alone, a payload that can't be
+  serialized doesn't break the Overview, optional features that aren't installed, pages without Nuxt.
 - `tests/panel.test.js`: the real entry point wired to a fake page: all tabs get filled, refresh doesn't
-  duplicate content, "Nuxt is not found" is shown for pages without Nuxt.
+  duplicate content, load errors are shown in their tabs, optional tabs hide and come back,
+  "Nuxt is not found" is shown for pages without Nuxt.
 - `tests/tabs.test.js`, `tests/i18n.test.js`, `tests/format.test.js`, `tests/dom.test.js`: rendering and pure logic.
 
 ## Manual smoke test
