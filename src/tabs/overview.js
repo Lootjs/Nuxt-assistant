@@ -5,8 +5,8 @@ import { createWidget, setFlag } from '../widgets.js';
 
 const WIDGET_ROWS = [
     [
-        { id: 'nuxt-version', name: 'Version', icon: './images/icon-nuxt.svg', iconAlt: 'nuxt logo', covered: false },
-        { id: 'vue-version', name: 'Version', icon: './images/icon-vue.svg', iconAlt: 'vue logo', covered: false },
+        { id: 'nuxt-version', name: 'Nuxt', icon: './images/icon-nuxt.svg', iconAlt: 'nuxt logo', covered: false },
+        { id: 'vue-version', name: 'Vue', icon: './images/icon-vue.svg', iconAlt: 'vue logo', covered: false },
         { id: 'i18n-included', name: 'I18n', icon: './images/icon-i18n.svg', flag: true },
         { id: 'pinia-included', name: 'Pinia', icon: './images/sidebar-crystal.svg', flag: true },
     ],
@@ -55,7 +55,9 @@ function getRenderingMode({ prerenderedAt, serverRendered }) {
 export function renderOverview(sections) {
     const overview = sections.overview.status === 'ok' ? sections.overview.data : null;
 
+    setText('pageHost', overview ? overview.host : 'N/A');
     setText('buildId', sectionValue(sections.buildId, buildId => buildId));
+    setText('updatedAt', new Date().toLocaleTimeString());
     setText('nuxt-version', overview ? overview.versions.nuxt : 'N/A');
     setText('vue-version', overview ? overview.versions.vue : 'N/A');
     setText('rendering-mode', overview ? getRenderingMode(overview) : 'N/A');

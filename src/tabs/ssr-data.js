@@ -1,8 +1,18 @@
 import { el, setText } from '../dom.js';
 import { formatBytes, jsonSyntaxHighlight, normalizeResponse } from '../format.js';
 import { settings } from '../settings.js';
+import { copyText } from '../clipboard.js';
 
 const HEAVY_RESPONSE_BYTES = 100 * 1024;
+const COPY_FEEDBACK_MS = 1500;
+
+export function setupSsrData() {
+    const setAllOpen = isOpen => document.querySelectorAll('#ssrRequestsList details')
+        .forEach(details => details.open = isOpen);
+
+    document.getElementById('ssrExpandAll').addEventListener('click', () => setAllOpen(true));
+    document.getElementById('ssrCollapseAll').addEventListener('click', () => setAllOpen(false));
+}
 
 export function renderSsrData(payload) {
     // Formatted in the user's locale
@@ -12,7 +22,8 @@ export function renderSsrData(payload) {
 
     const errors = payload._errors || {};
     const data = payload.data || {};
-    const requestKeys = Object.keys(data);
+    // Failed requests first, the rest keeps the payload order (sort is stable)
+    const requestKeys = Object.keys(data).sort((a, b) => Boolean(errors[b]) - Boolean(errors[a]));
     const items = requestKeys.map(key => createRequestItem(key, data[key], errors[key]));
     const totalSize = items.reduce((sum, { size }) => sum + size, 0);
 
@@ -26,6 +37,22 @@ function getType(value) {
     }
 
     return typeof value;
+}
+
+// Copies the full response (not the truncated one that's shown) and reports the result on the button
+function createCopyButton(getJson) {
+    return el('button', {
+        className: ['button', 'request-item__copy'],
+        title: 'Copy the full response as JSON',
+        onClick: async event => {
+            // The button is inside <summary>: without it the click would also toggle the request
+            event.preventDefault();
+            const button = event.currentTarget;
+            const copied = await copyText(getJson());
+            button.textContent = copied ? 'Copied' : 'Copy failed';
+            setTimeout(() => button.textContent = 'Copy JSON', COPY_FEEDBACK_MS);
+        },
+    }, 'Copy JSON');
 }
 
 function createRequestItem(key, response, error) {
@@ -59,7 +86,10 @@ function createRequestItem(key, response, error) {
         el('summary', { title: key },
             el('span', {}, 'Request: '),
             key,
-            el('div', { className: ['request-item__labels', size >= HEAVY_RESPONSE_BYTES && 'request-item__labels--heavy'] }, labels),
+            el('div', { className: ['request-item__labels', size >= HEAVY_RESPONSE_BYTES && 'request-item__labels--heavy'] },
+                el('span', { className: 'request-item__info' }, labels),
+                createCopyButton(() => JSON.stringify(error || response, null, 2)),
+            ),
         ),
         dataElement,
     );

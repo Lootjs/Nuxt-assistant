@@ -5,19 +5,23 @@
 
 ## Features
 
-- **Overview**: Nuxt and Vue versions, build ID, rendering mode (SSR / SSG / SPA), i18n and Pinia detection,
-  and quick stats: routes, SSR requests, inline payload size and global components. Each card opens its tab.
+- **Overview**: the site, Nuxt and Vue versions, build ID, rendering mode (SSR / SSG / SPA), i18n and Pinia
+  detection, and quick stats: routes, SSR requests, inline payload size and global components. Each card opens its tab.
+- **Tab counters**: routes, SSR requests, Pinia stores and components are counted right in the menu;
+  failed SSR requests, missing translations and sections that couldn't load are highlighted there.
 - **Routes**:
     - All routes with their meta, with case-insensitive search by path, name or meta.
     - The current route is highlighted, dynamic routes (`/users/:id`) included.
 - **SSR Data**:
     - All requests made during server-side rendering, with their responses.
     - Response sizes, with large ones highlighted, and the total payload data size.
-    - Failed requests with their error message and status code.
+    - Failed requests first, with their error message and status code.
+    - Copy any response as JSON in full, expand or collapse all requests at once.
 - **Configs**: Public runtime config, app config and the State.
 - **i18n**:
     - Current, default and browser locales.
     - All translations with case-insensitive search, including messages with placeholders, plurals and linked messages.
+      Right-to-left translations (Arabic, Hebrew) are displayed correctly.
     - Missing translations: keys present in one locale but absent in another.
 - **Pinia**: Stores with their primitive state and getters values, and their actions.
 - **Internals**:

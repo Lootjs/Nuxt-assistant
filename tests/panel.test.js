@@ -152,6 +152,8 @@ test('the data comes back when the page has Nuxt again', async () => {
     await wait(50);
 
     assert.equal(document.querySelector('.nuxt-not-found').hidden, true);
+    assert.equal(document.querySelector('[data-id=routes] .tablinks__badge').textContent, '2');
+    assert.equal(text('#pageHost'), 'shop.example.com');
     assert.equal(text('#buildId'), 'build-1');
     assert.equal(document.querySelectorAll('#routesList .route-item').length, 2);
 });
@@ -165,6 +167,22 @@ test('an Overview card opens its tab, cards without a tab are not links', () => 
     assert.equal(document.querySelectorAll('#common .widget').length, 9);
     assert.equal(document.querySelectorAll('#i18nWidgets .widget').length, 3);
 
+    document.querySelector('[data-id=common]').click();
+});
+
+test('the refresh button spins while the data is loading', async () => {
+    const refreshButton = document.getElementById('refetch-trigger');
+    refreshButton.click();
+    assert.ok(refreshButton.classList.contains('is-loading'));
+
+    await wait(50);
+    assert.ok(!refreshButton.classList.contains('is-loading'));
+});
+
+test('a click on a tab badge opens the tab', () => {
+    document.querySelector('[data-id=routes] .tablinks__badge').click();
+
+    assert.ok(document.getElementById('routes').classList.contains('active'));
     document.querySelector('[data-id=common]').click();
 });
 

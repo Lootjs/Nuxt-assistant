@@ -41,6 +41,7 @@ test('detectNuxt', async () => {
 
 test('getOverview', async () => {
     assert.deepEqual(await evalInPage(queries.getOverview), {
+        host: 'shop.example.com',
         versions: { nuxt: '4.5.2', vue: '3.5.43' },
         serverRendered: true,
         prerenderedAt: null,

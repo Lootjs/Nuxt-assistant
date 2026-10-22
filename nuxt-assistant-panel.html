@@ -14,8 +14,14 @@
     <div class="layout">
         <div class="sidebar">
             <div class="header">
-                <img src="./images/icon128.png" alt="" width="36px" />
+                <img src="./images/icon128.png" alt="" width="28" />
                 <div class="header__title">Nuxt Assistant</div>
+                <button class="refresh-button" id="refetch-trigger" title="Refresh data" aria-label="Refresh data">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                        <path d="M20 12a8 8 0 1 1-2.34-5.66"/>
+                        <path d="M20 4v4h-4"/>
+                    </svg>
+                </button>
             </div>
             <div class="tabs" id="tablinkNavigator">
                 <div class="tablinks active" data-id="common">
@@ -42,9 +48,6 @@
                 <div class="tablinks" data-id="components">
                     Components
                 </div>
-                <div class="tablinks" id="refetch-trigger">
-                    Refresh data
-                </div>
                 <div class="tablinks" data-id="settings">
                     Settings
                 </div>
@@ -64,7 +67,9 @@
                     <div class="section-head__body">
                         <div class="section-head__title">Debug Nuxt sites at Production</div>
                         <div class="section-head__subtitle">
-                            Build ID: <span id="buildId"></span>
+                            <span id="pageHost" data-page-content></span> ·
+                            Build ID: <span id="buildId"></span> ·
+                            Updated <span id="updatedAt" data-page-content></span>
                         </div>
                     </div>
                 </div>
@@ -97,7 +102,7 @@
                             Route name
                         </div>
                         <div class="route-item__label">
-                            Labels
+                            Meta
                         </div>
                     </div>
                 </div>
@@ -144,6 +149,10 @@
                         <div class="section-head__subtitle" id="prerenderedAt" data-page-content></div>
                         <div class="section-head__subtitle" id="ssrDataTotal" data-page-content></div>
                     </div>
+                </div>
+                <div class="toolbar">
+                    <button class="button" id="ssrExpandAll">Expand all</button>
+                    <button class="button" id="ssrCollapseAll">Collapse all</button>
                 </div>
                 <div id="ssrRequestsList" data-page-content></div>
             </div>

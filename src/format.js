@@ -23,32 +23,33 @@ export function formatListValue(value) {
     return String(value);
 }
 
-// Replaces nested values deeper than MAX_DEPTH with a short summary, so huge responses stay readable
+// Replaces objects nested deeper than MAX_DEPTH in array items with a short summary, so huge responses
+// stay readable. Returns new objects: the response itself is kept intact, e.g. for "Copy JSON".
 export function normalizeResponse(response) {
     if (!Array.isArray(response)) {
         return response
     }
     const MAX_DEPTH = 2;
-    function limitDepth(obj, maxDepth, currentDepth = 0) {
-        if (currentDepth > maxDepth) {
-            if (Array.isArray(obj)) {
-                return `hidden-array[${obj.length}]`
-            }
-            return Object(obj) === obj ? `hidden-object[${Object.keys(obj).length}]` : typeof obj;
+
+    function limitDepth(value, depth) {
+        if (typeof value !== 'object' || value === null) {
+            return value;
         }
 
-        if (typeof obj === 'object' && obj !== null) {
-            for (let key in obj) {
-                if (typeof obj[key] === 'object') {
-                    obj[key] = limitDepth(obj[key], maxDepth, currentDepth + 1);
-                }
-            }
+        if (depth > MAX_DEPTH) {
+            return Array.isArray(value)
+                ? `hidden-array[${value.length}]`
+                : `hidden-object[${Object.keys(value).length}]`;
         }
 
-        return obj;
+        if (Array.isArray(value)) {
+            return value.map(item => limitDepth(item, depth + 1));
+        }
+
+        return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, limitDepth(item, depth + 1)]));
     }
 
-    return response.map(log => limitDepth(log, MAX_DEPTH));
+    return response.map(item => limitDepth(item, 0));
 }
 
 // Returns HTML: the JSON is escaped first, so the result is safe to assign to innerHTML

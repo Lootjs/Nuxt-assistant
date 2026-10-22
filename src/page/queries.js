@@ -13,6 +13,7 @@ export function getOverview() {
     const nuxtApp = window.useNuxtApp();
 
     return {
+        host: location.host,
         versions: nuxtApp.versions,
         serverRendered: !!nuxtApp.payload.serverRendered,
         prerenderedAt: nuxtApp.payload.prerenderedAt ?? null,
@@ -49,7 +50,6 @@ export function getRoutes() {
         path: route.path,
         name: route.name,
         meta: route.meta,
-        props: route.props,
         active: !!activeRecord && route.path === activeRecord.path,
     }));
 }

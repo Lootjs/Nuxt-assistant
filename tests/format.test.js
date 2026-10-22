@@ -36,6 +36,14 @@ test('hides values nested deeper than the limit in array responses', () => {
     assert.deepEqual(normalizeResponse(response), [{ a: { b: { c: 'hidden-object[1]' }, list: ['hidden-array[1]'] } }]);
 });
 
+test("doesn't change the response itself", () => {
+    const response = [{ a: { b: { c: { d: 1 } } } }];
+    const copy = structuredClone(response);
+    normalizeResponse(response);
+
+    assert.deepEqual(response, copy);
+});
+
 test('leaves non-array responses as they are', () => {
     const response = { a: { b: { c: { d: 1 } } } };
 

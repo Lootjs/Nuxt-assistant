@@ -49,7 +49,8 @@ function renderMessages(shownMessages) {
     document.getElementById('i18nMessagesList').replaceChildren(el('div', {}, shownMessages.map(({ key, value }) =>
         el('div', { className: 'i18nItem' },
             el('span', { className: 'i18nItem__key' }, key),
-            el('span', { className: 'i18nItem__value' }, value),
+            // dir="auto": right-to-left values (Arabic, Hebrew) mixed with digits or Latin text render correctly
+            el('span', { className: 'i18nItem__value', dir: 'auto' }, value),
         )
     )));
 }

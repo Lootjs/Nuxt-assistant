@@ -51,7 +51,7 @@ function installFakeNuxtApp() {
  * e.g. () => { delete window.useNuxtApp().$i18n }
  */
 export function createFakePage({ withNuxt = true, payloadScript = null, patch = null } = {}) {
-    const page = vm.createContext({ Blob });
+    const page = vm.createContext({ Blob, location: { host: 'shop.example.com' } });
     vm.runInContext('globalThis.window = globalThis', page);
     page.document = { querySelector: () => payloadScript };
     if (withNuxt) {

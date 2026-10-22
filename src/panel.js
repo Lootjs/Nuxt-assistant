@@ -1,10 +1,11 @@
 import { collectSnapshot } from './snapshot.js';
 import { renderSection } from './sections.js';
 import { fetchModuleInfo, getModuleCandidates } from './modules-api.js';
-import { openTab, setTabVisible, setupNavigation } from './navigation.js';
+import { clearTabBadges, openTab, setTabVisible, setupNavigation } from './navigation.js';
+import { renderTabBadges } from './badges.js';
 import { loadSettings, setupSettings } from './settings.js';
 import { clearOverview, renderOverview, setupOverview } from './tabs/overview.js';
-import { renderSsrData } from './tabs/ssr-data.js';
+import { renderSsrData, setupSsrData } from './tabs/ssr-data.js';
 import { renderConfigs } from './tabs/configs.js';
 import { clearRoutes, renderRoutes, setupRoutes } from './tabs/routes.js';
 import { clearI18n, renderI18n, setupI18n } from './tabs/i18n.js';
@@ -23,6 +24,7 @@ function setNuxtNotFoundVisible(isVisible) {
 function clearPageContent() {
     document.querySelectorAll('[data-page-content]').forEach(element => element.replaceChildren());
     clearOverview();
+    clearTabBadges();
     clearRoutes();
     clearI18n();
 }
@@ -30,6 +32,7 @@ function clearPageContent() {
 // Optional tabs (i18n, Pinia) are hidden when the app doesn't use the feature, but stay visible on a load error
 function renderSnapshot(sections) {
     renderOverview(sections);
+    renderTabBadges(sections);
 
     renderSection(sections.payload, payload => {
         renderSsrData(payload);
@@ -82,8 +85,8 @@ async function loadModules(sections, runId) {
 
 async function runAssistant() {
     const runId = ++currentRunId;
-    const title = document.querySelector('.header__title');
-    title.textContent = 'Fetching..';
+    const refreshButton = document.getElementById('refetch-trigger');
+    refreshButton.classList.add('is-loading');
 
     try {
         const { hasNuxt, sections } = await collectSnapshot();
@@ -104,7 +107,7 @@ async function runAssistant() {
         await loadModules(sections, runId);
     } finally {
         if (runId === currentRunId) {
-            title.textContent = 'Nuxt Assistant';
+            refreshButton.classList.remove('is-loading');
         }
     }
 }
@@ -119,6 +122,7 @@ setupNavigation({ onRefresh: runAssistant });
 document.querySelector('.nuxt-not-found').addEventListener('click', () => runAssistant());
 setupOverview();
 setupRoutes();
+setupSsrData();
 setupI18n();
 setupSettings({
     onSave: () => {

@@ -23,8 +23,9 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
 - `src/page/queries.js`: code executed in the inspected page. `src/page/eval.js`: `evalInPage(fn)`.
 - `src/tabs/*.js`: one module per panel tab, they receive data as arguments and render it.
   `tabs/overview.js` gets all sections and computes every Overview card; other tabs don't touch it.
+- `src/badges.js`: counters next to the tab names, computed from the snapshot like the Overview.
 - `src/dom.js` (`el`, `createTable`, `setText`), `src/cards.js`, `src/format.js`, `src/i18n/`, `src/modules-api.js`,
-  `src/settings.js`, `src/navigation.js`.
+  `src/settings.js`, `src/navigation.js` (tabs and their badges), `src/clipboard.js`.
 - Extension entry files stay in the repo root on purpose; don't move them into `src/`.
 
 ## Rules and gotchas
@@ -55,6 +56,12 @@ Chrome Web Store. Vanilla JS, no framework, no build step.
   `createWidget()` (`src/widgets.js`); a card with `tab` opens that tab on click. Set values by id with
   `setText()`, flag cards with `setFlag()`. Tests that render these cards call `setupOverview()` / `setupI18n()` first.
 - Build DOM with `el()`: string children become text nodes, so page data can't inject HTML.
+- Copy to the clipboard with `copyText()`: the Clipboard API is usually blocked in DevTools panels, it falls
+  back to `execCommand('copy')`.
+- Render helpers must not mutate the snapshot data (`normalizeResponse` returns new objects): "Copy JSON"
+  copies the original response.
+- Text from the page may be right-to-left: put `dir: 'auto'` on elements showing translations or other user text.
+- The panel is dense on purpose (13px base font, small paddings) to match DevTools; keep new UI compact.
   `innerHTML` is only used for `jsonSyntaxHighlight()` output, which escapes its input.
 - Data from the inspected page is untrusted (payload, error messages, i18n strings).
 - `runtime.sendMessage` reaches every open panel: compare `message.tabId` with
@@ -85,5 +92,4 @@ Ideas postponed during the refactoring, not started:
 
 - Refresh on client-side (SPA) navigation: now only full page loads trigger a refresh.
 - Pinia: show object state with a depth limit (like `normalizeResponse`) instead of `{}`.
-- Drop the `{"default":false}` noise from route labels.
 - Routes search by a concrete URL (`/en/claims/123` → `/en/claims/:id`), e.g. with `router.resolve()` in the page.
