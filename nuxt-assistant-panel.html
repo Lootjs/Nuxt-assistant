@@ -42,7 +42,7 @@
                     Components
                 </div>
                 <div class="tablinks" id="refetch-trigger">
-                    Restart Nuxt Assistant
+                    Refresh data
                 </div>
                 <div class="tablinks" data-id="settings">
                     Settings
@@ -90,19 +90,6 @@
                     </div>
 
                     <div class="widget widget--covered">
-                        <div class="widget__highlight" id="server-rendered">
-                            <img src="./images/icon-check.svg" id="ssr-true"/>
-                            <img src="./images/icon-denied.svg" id="ssr-false"/>
-                        </div>
-                        <div class="widget__meta">
-                            <div class="widget__cover">
-                                <img src="./images/icon-ssr.svg" alt=""/>
-                            </div>
-                            <div class="widget__name">SSR</div>
-                        </div>
-                    </div>
-
-                    <div class="widget widget--covered">
                         <div class="widget__highlight" id="i18n-included">
                             <img src="./images/icon-check.svg" id="i18n-true"/>
                             <img src="./images/icon-denied.svg" id="i18n-false"/>
@@ -128,6 +115,58 @@
                         </div>
                     </div>
                 </div>
+
+                <div class="widgets">
+                    <div class="widget widget--covered">
+                        <div class="widget__highlight" id="rendering-mode"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-overview.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">Rendering</div>
+                        </div>
+                    </div>
+
+                    <div class="widget widget--covered" data-tab="routes">
+                        <div class="widget__highlight" id="routes-count"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-router.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">Routes</div>
+                        </div>
+                    </div>
+
+                    <div class="widget widget--covered" data-tab="ssrData">
+                        <div class="widget__highlight" id="ssr-requests-count"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-ssr.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">SSR requests</div>
+                        </div>
+                    </div>
+
+                    <div class="widget widget--covered" data-tab="ssrData" title="Size of the payload inlined into the HTML (__NUXT_DATA__)">
+                        <div class="widget__highlight" id="payload-size"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/icon-ssr.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">Inline payload</div>
+                        </div>
+                    </div>
+
+                    <div class="widget widget--covered" data-tab="components">
+                        <div class="widget__highlight" id="components-count"></div>
+                        <div class="widget__meta">
+                            <div class="widget__cover">
+                                <img src="./images/sidebar-crystal.svg" alt=""/>
+                            </div>
+                            <div class="widget__name">Global components</div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div id="routes" class="tabcontent">
@@ -143,9 +182,6 @@
 
                 <div class="routes routes--heading">
                     <div class="route-item">
-                        <div class="route-item__status">
-                            Status
-                        </div>
                         <div class="route-item__path">
                             Path
                         </div>
@@ -198,6 +234,7 @@
                     <div class="section-head__body">
                         <div class="section-head__title">SSR Data</div>
                         <div class="section-head__subtitle" id="prerenderedAt"></div>
+                        <div class="section-head__subtitle" id="ssrDataTotal"></div>
                     </div>
                 </div>
                 <div id="ssrRequestsList"></div>

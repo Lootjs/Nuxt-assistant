@@ -196,6 +196,7 @@ ul > li span.silent {
 .widgets {
     margin-top: 10px;
     display: flex;
+    flex-wrap: wrap;
     gap: 10px;
 }
 
@@ -268,7 +269,7 @@ ul > li span.silent {
 .route-item {
     display: flex;
     gap: 10px;
-    padding: 10px 0 10px;
+    padding: 10px;
     border: 1px solid transparent;
     border-radius: 4px;
 }
@@ -287,29 +288,25 @@ ul > li span.silent {
     border: 1px solid transparent;
 }
 
-.route-item__status {
-    flex: 0 0 8%;
-    text-align: right;
+.route-item__path {
+    flex: 0 0 38%;
 }
 
-.route-item__status span {
+.route-item--active {
+    background: #00495433;
+}
+
+.route-item--active .route-item__path {
+    color: var(--primary-color);
+}
+
+.route-item__badge {
+    margin-left: 8px;
     color: var(--primary-color);
     background: #004954;
     border-radius: 4px;
-    padding: 4px 10px;
-    display: none;
-}
-
-.route-item__status span.active {
-    display: inline;
-}
-
-.route-item__path {
-    flex: 0 0 32%;
-}
-
-.route-item__path--active {
-    color: var(--primary-color);
+    padding: 2px 8px;
+    font-size: 13px;
 }
 
 .route-item__name {
@@ -342,6 +339,10 @@ ul > li span.silent {
 
 .routeItem .routeItem__labels {
     color: var(--secondary-color);
+}
+
+.routeItem .routeItem__labels--heavy {
+    color: var(--highlight-color);
 }
 
 .routeItem summary {
