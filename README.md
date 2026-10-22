@@ -22,6 +22,16 @@
     - Insight into the application and runtime configurations.
     - Comprehensive information about the State.
 
+## Development
+
+The extension has no build step: `src/panel.js` is loaded as an ES module by `nuxt-assistant-panel.html`.
+Load the repository folder with "Load unpacked" in `chrome://extensions`.
+
+- `npm test` runs the tests, `npm run pack` builds the zip for the Chrome Web Store.
+- Code in `src/page/queries.js` is executed in the inspected page, so each function there must be self-contained.
+
+See [TESTING.md](TESTING.md) for details and the manual smoke test.
+
 ## Links
 
 - **Check it out**: [Nuxt Assistant on Chrome Web Store](https://chromewebstore.google.com/detail/nuxt-assistant/nebkdnlhchcbbjpgfmhifafhfjipphgi?hl=ru)

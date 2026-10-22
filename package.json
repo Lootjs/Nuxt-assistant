@@ -1,0 +1,16 @@
+{
+  "name": "nuxt-assistant",
+  "private": true,
+  "description": "Development tooling for the Nuxt Assistant Chrome extension. Not shipped with the extension.",
+  "type": "module",
+  "engines": {
+    "node": ">=22.2"
+  },
+  "scripts": {
+    "test": "node --test",
+    "pack": "node scripts/pack.js"
+  },
+  "devDependencies": {
+    "jsdom": "^26.1.0"
+  }
+}
